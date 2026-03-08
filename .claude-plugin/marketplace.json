@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "maxim-skills",
+  "description": "Personal skills collection synced across machines.",
+  "owner": {
+    "name": "Maxim Uvarov"
+  },
+  "plugins": [
+    {
+      "name": "my-claude-skills",
+      "description": "Personal skills: spec extraction and more.",
+      "version": "0.1.0",
+      "source": ".",
+      "category": "productivity"
+    }
+  ]
+}

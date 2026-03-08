@@ -10,7 +10,7 @@
       "name": "my-claude-skills",
       "description": "Personal skills: spec extraction and more.",
       "version": "0.1.0",
-      "source": ".",
+      "source": "./plugins/my-skills",
       "category": "productivity"
     }
   ]

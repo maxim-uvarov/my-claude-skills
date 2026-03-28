@@ -12,6 +12,13 @@
       "version": "0.1.0",
       "source": "./plugins/my-skills",
       "category": "productivity"
+    },
+    {
+      "name": "git-intent-interface",
+      "description": "use git as an interface to preserve intent thorough llm interaction iterrations",
+      "version": "0.1.0",
+      "source": "./plugins/git-intent-interface",
+      "category": "productivity"
     }
   ]
 }

@@ -1,5 +1,6 @@
 ---
 name: g-intent-squash-archive
+version: 0.1.0
 description: >-
   Squash all commits on the current branch into one, preserving full history
   in a git tag. This skill should be used when the user says "squash branch",

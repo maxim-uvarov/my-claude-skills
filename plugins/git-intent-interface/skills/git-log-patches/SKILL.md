@@ -1,5 +1,6 @@
 ---
 name: git-log-patches
+version: 0.1.0
 description: >-
   Show git log with patches (diffs) in reverse order for the last N commits.
   This skill should be used when the user says "show patches", "show last N

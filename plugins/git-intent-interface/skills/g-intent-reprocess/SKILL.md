@@ -1,5 +1,6 @@
 ---
 name: g-intent-reprocess
+version: 0.1.0
 description: >-
   Propagate a user's choice through files — find and remove or rewrite
   references that conflict with the change the user committed. This skill

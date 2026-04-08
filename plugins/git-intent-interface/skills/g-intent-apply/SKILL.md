@@ -1,5 +1,6 @@
 ---
 name: g-intent-apply
+version: 0.1.0
 description: >-
   Process the last N commits as instructions — execute !! markers and commit
   message directives in any file type. This skill should be used when the user

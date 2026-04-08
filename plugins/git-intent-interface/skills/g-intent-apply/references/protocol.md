@@ -62,5 +62,6 @@ When instructions contradict each other, apply these rules in order:
 ## Available Commands
 
 - `/g-intent-apply N` — process last N commits as instructions
+- `/g-intent-reprocess [file|N]` — propagate a user's choice, remove conflicting references
 - `/g-intent-squash-archive` — squash all branch commits, preserve history in a git tag
 - `/git-log-patches N` — show `git log -p --reverse` for last N commits

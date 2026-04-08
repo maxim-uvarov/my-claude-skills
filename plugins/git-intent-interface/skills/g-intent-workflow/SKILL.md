@@ -19,18 +19,18 @@ We rely heavily on git — every change is a commit the human can review, revert
 
 All skills are in the initial prototyping phase — this is guidance, not strict rules. We are inventing mechanics along the way.
 
-## Commit Message Protocol
-
-- `!!` — process all markers in the committed files, no additional instruction
-- `!! instruction text` — process markers AND apply the instruction globally to committed files
-- A plain commit message (no `!!`) with `!!` markers in files — the commit message is context/explanation, markers are the instructions
-
 ## Instruction Channels
 
 - **Commit message** — high-level instruction (`!! check consistency`, `!! add error handling`)
 - **`!!` markers in files** — specific actions tied to a location in the file
 
 Both are ephemeral by default — commit messages are read and executed, markers are removed after processing.
+
+## Commit Message Protocol
+
+- `!!` — process all markers in the committed files, no additional instruction
+- `!! instruction text` — process markers AND apply the instruction globally to committed files
+- A plain commit message (no `!!`) with `!!` markers in files — the commit message is context/explanation, markers are the instructions
 
 ## Markers
 
@@ -47,6 +47,15 @@ def legacy_handler():
 ```
 
 The `[keep]` keyword itself stays in the marker. The user removes it manually when ready.
+
+## Conflict Resolution
+
+When instructions contradict each other:
+
+1. **File marker overrides commit message** — a marker is more specific (tied to a location)
+2. **Later marker overrides earlier marker** — top-to-bottom; if an earlier result is invalidated by a later marker, the later one wins
+3. **User's committed change overrides prior markers** — the user's edit is the decision; remove the marker without re-applying
+4. **When ambiguous, stop and ask**
 
 ## Git Commits (Agent)
 

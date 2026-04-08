@@ -28,3 +28,9 @@ Protocol rules (commit message patterns, marker syntax, conflict resolution, com
    - **Exception:** if the marker contains `[keep]`, preserve it as-is
    - When instructions conflict, apply the conflict resolution rules from the protocol
 5. Commit each logical change separately with a descriptive subject and mandatory body explaining the reasoning
+
+## Related skills
+
+- `/g-intent-reprocess` — after applying, propagate choices through files that weren't in the diff
+- `/g-intent-squash-archive` — when done iterating, squash the branch into one clean commit
+- `/git-log-patches` — review what was applied

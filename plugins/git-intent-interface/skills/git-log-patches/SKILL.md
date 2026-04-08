@@ -17,3 +17,9 @@ Run the command and display the output:
 ```bash
 git log -p -$ARGUMENTS --reverse
 ```
+
+## Related skills
+
+- `/g-intent-apply` — process the reviewed commits as instructions
+- `/g-intent-reprocess` — propagate choices found in the patches
+- `/g-intent-squash-archive` — squash the branch after review

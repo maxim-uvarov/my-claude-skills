@@ -35,3 +35,9 @@ Conflict resolution rules are in the g-intent-apply `references/protocol.md`. Fo
 7. If conflicts found — list them and explain why each conflicts with the user's decision. Ask the user to confirm before making changes
 8. Apply the changes: remove or rewrite conflicting references
 9. Commit with a subject describing the propagation and a body that explains: what the user's original decision was, which references conflicted, and why they were removed or rewritten
+
+## Related skills
+
+- `/g-intent-apply` — process commits as instructions (run this first, then reprocess)
+- `/g-intent-squash-archive` — squash the branch after all changes are propagated
+- `/git-log-patches` — review what was changed

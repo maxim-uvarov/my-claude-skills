@@ -24,3 +24,9 @@ Archive and squash all commits on the current branch:
 9. Generate commit message — subject describes key changes, body includes details + `Archive: archive/<branch>`
 10. `git commit`
 11. Show `git log --oneline -5` and remind about `git log archive/<branch>` for the full history
+
+## Related skills
+
+- `/g-intent-apply` — process commits as instructions before squashing
+- `/g-intent-reprocess` — propagate choices before squashing
+- `/git-log-patches` — review the branch history before archiving

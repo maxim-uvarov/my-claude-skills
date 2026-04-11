@@ -19,9 +19,6 @@ If `$ARGUMENTS` is empty or not a positive integer, default to `1`.
 
 1. **Clean-tree check** — run `git status --porcelain`. If non-empty,
    stop and ask the user to commit or stash.
-   **Skip this step** if the previous tool call in this session was a
-   successful `git commit` and no edits by the user happened in
-   between — the tree is guaranteed clean and the call would be wasted.
 
 2. **Get the diff** — run `git log -p -N --reverse` where `N =
    $ARGUMENTS`. If the patch is very large (>500 lines), prefer

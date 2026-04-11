@@ -20,7 +20,10 @@ Archive and squash all commits on the current branch:
 6. Show the user: commit list, total count, tag overwrite warning (if applicable). **STOP.** Wait for confirmation before proceeding
 7. `git tag -f archive/<branch> HEAD`
 8. `git reset --soft <base>`
-9. Generate commit message — subject describes key changes, body includes details + `Archive: archive/<branch>`
+9. Generate commit message:
+   - **Subject**: one line — what the branch accomplished
+   - **Body**: summarize the decisions made on this branch, preserving the user's reasoning from original commit bodies where present, then an `Archive: archive/<branch>` trailer
+   - No diff restating; no listing of things you checked and didn't find
 10. `git commit`
 11. Show `git log --oneline -5` and remind about `git log archive/<branch>` for the full history
 

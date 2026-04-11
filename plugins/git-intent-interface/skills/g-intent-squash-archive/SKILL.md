@@ -1,11 +1,10 @@
 ---
 name: g-intent-squash-archive
-version: 0.1.1
+version: 0.2.0
 description: >-
-  Squash all commits on the current branch into one, preserving full history
-  in a git tag. This skill should be used when the user says "squash branch",
-  "archive commits", "squash and archive", "clean up branch history",
-  "collapse branch into one commit", or "g-intent-squash-archive".
+  Squash all commits on the current branch into one, preserving the
+  original history in a git tag. Use when the user says "squash branch"
+  or "g-intent-squash-archive".
 allowed-tools: Bash
 ---
 
@@ -25,8 +24,7 @@ Archive and squash all commits on the current branch:
 10. `git commit`
 11. Show `git log --oneline -5` and remind about `git log archive/<branch>` for the full history
 
-## Related skills
+## Related
 
-- `/g-intent-apply` — process commits as instructions before squashing
-- `/g-intent-reprocess` — propagate choices before squashing
-- `/git-log-patches` — review the branch history before archiving
+- `/g-intent` — process commits as instructions and propagate choices
+  before squashing

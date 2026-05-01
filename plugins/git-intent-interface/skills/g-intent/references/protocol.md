@@ -18,8 +18,6 @@ doubt, the agent should make the change and commit rather than ask.
 - Place on the line above or beside the target code
 - Removed after processing (remove the whole comment, including any
   closing delimiters like `*/` or `-->`, not just the `!!` token)
-- `[keep]` anywhere in the marker preserves it as-is; the `[keep]`
-  keyword stays; the user removes it manually
 - HTML/plain comments without `!!` are persistent context — leave alone
 
 See `examples/marker-syntax.md` for per-language syntax.

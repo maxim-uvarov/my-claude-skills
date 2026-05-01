@@ -10,8 +10,7 @@ doubt, the agent should make the change and commit rather than ask.
 
 1. `!!` alone — process markers in committed files; no global instruction
 2. `!! <text>` — process markers AND apply `<text>` globally to the files
-3. Plain message — treat as pattern 1 if the files contain markers; the
-   message is context, not an instruction
+3. Commit by user with plain message describing change —  propagate the change in other places of this or relevant docs. Message is context for diff, not an instruction
 
 ## Markers
 

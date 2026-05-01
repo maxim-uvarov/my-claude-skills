@@ -27,7 +27,7 @@ See `examples/marker-syntax.md` for per-language syntax.
 1. **File marker > commit message** — a marker is tied to a location,
    more specific than a general commit message
 2. **Later marker > earlier marker** — top-to-bottom; if a later marker
-   invalidates an earlier one's result, the later wins
+   invalidates an earlier one's result, the later wins. Though in the final commit message the conflict of instructions must be acknowleged
 3. **User's committed edit > prior markers** — if the user edited code
    a marker targets, the edit *is* the decision; remove the marker
    without re-applying it

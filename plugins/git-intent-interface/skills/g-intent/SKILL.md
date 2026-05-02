@@ -16,7 +16,7 @@ If `$ARGUMENTS` is empty or not a positive integer, default to `1`.
 
 2. **Get the diff** — run `git log -p -N --reverse` where `N = $ARGUMENTS`. If the patch is very large (>500 lines), prefer `git log -N --stat` plus targeted `git show` per file to avoid filling context.
 
-3. **Read files in scope** in full, **but skip any file already in tool-tracked state from this session** — don't re-read a file you just edited. Skip binary files.
+3. **Read files in scope** in full. Skip files you've already read or edited in this session, and skip binary files.
 
 4. **For each commit, run the pipeline:**
    - **Apply markers** — for each `!!` marker added in the diff, read the instruction text, apply it to the target code/text, remove the whole marker comment (including any closing delimiters like `*/` or `-->`).
@@ -25,9 +25,7 @@ If `$ARGUMENTS` is empty or not a positive integer, default to `1`.
 
    Empty markers, empty global instruction, and no propagation needed are all valid no-ops — the pipeline runs unconditionally.
 
-5. **Ambiguity check** — if a commit message carries multiple instructions, an unusual phrasing, or an edit whose scope is unclear, post a one-paragraph interpretation **before** editing. If the user doesn't push back within a turn, proceed. This is cheaper than committing in the wrong direction and reverting.
-
-6. **Commit each logical change** — one commit per decision, using the body template in the protocol. If there is genuinely nothing to do (no markers, no propagation, no cleanup), report it and exit without creating an empty commit.
+5. **Commit each logical change** — one commit per decision, using the body template in the protocol. Per the protocol's *Surface contradictions* rule: when scope is unclear, name your interpretation in the commit body if you can resolve it; ask the user if you can't. If there is genuinely nothing to do (no markers, no propagation, no cleanup), report it and exit without creating an empty commit.
 
 ## Related
 

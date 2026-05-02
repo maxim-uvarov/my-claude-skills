@@ -19,14 +19,11 @@ The subject prefix is `gi:` (quiet — the commit *is* the unit, no surrounding 
 
 See `examples/marker-syntax.md` for per-language syntax.
 
-!! but do we really need the `conflict resolution`? I expect to be mindful about my edits. Though, I guess, it would be good to signal me if start contradict myself.
-## Conflict resolution (in order)
+## Reading user edits
 
-1. **File marker > commit message** — a marker is tied to a location, more specific than a general commit message
-2. **Later marker > earlier marker** — top-to-bottom; if a later marker invalidates an earlier one's result, the later wins. Though in the final commit message the conflict of instructions must be acknowledged
-3. **User's committed edit > prior markers** — if the user edited code a marker targets, the edit *is* the decision; remove the marker without re-applying it
-4. **Clean up broken surroundings after rule 3** — if the user's edit left a dangling sentence, stale list numbering, or broken syntax, fix it. Never re-add content the user removed
-5. **Genuine ambiguity** — stop and ask rather than guess
+- **User's committed edit > prior markers** — if the user edited code a marker targets, the edit *is* the decision; remove the marker without re-applying it
+- **Clean up broken surroundings** — if the user's edit left a dangling sentence, stale list numbering, or broken syntax, fix it. Never re-add content the user removed
+- **Surface contradictions** — when markers/edits conflict or scope is unclear, name the conflict in the commit body if you can resolve it, ask the user if you can't
 
 ## Agent commits
 

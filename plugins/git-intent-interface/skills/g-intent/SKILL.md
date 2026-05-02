@@ -1,7 +1,7 @@
 ---
 name: g-intent
 version: 0.3.0
-description: Process commits as instructions — execute `!!` markers and propagate user-committed choices through the codebase. Use when the user says "g-intent", "apply intent", or "process last N commits".
+description: Process commits as instructions — execute `!!` inline markers and `gi: <text>` commit-subject instructions, propagate user-committed choices through the codebase. Use when the user says "g-intent", "process", "apply intent", or pastes a `git log` containing `!!` markers or `gi:` subjects.
 argument-hint: <N>
 allowed-tools: Bash, Read, Edit, Write, Grep, Glob
 ---

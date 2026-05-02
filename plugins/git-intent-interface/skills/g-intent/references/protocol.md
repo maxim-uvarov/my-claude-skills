@@ -32,7 +32,6 @@ Each logical change is its own commit. Subject = what changed. Body is mandatory
 ```
 <subject>
 
-Trigger: <commit subject or marker text + location>
 Decision: <one sentence>
 Why: <non-obvious reasoning, 1–2 sentences>
 Propagated: <other places touched — omit this line if none>

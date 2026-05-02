@@ -1,6 +1,6 @@
 {
   "name": "git-intent-interface",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Git as an instruction interface — deliver intent to an agent via commit messages and !! markers in any file type",
   "author": {
     "name": "maxim-uvarov"

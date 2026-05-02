@@ -19,6 +19,7 @@ The subject prefix is `gi:` (quiet — the commit *is* the unit, no surrounding 
 
 See `examples/marker-syntax.md` for per-language syntax.
 
+!! but do we really need the `conflict resolution`? I expect to be mindful about my edits. Though, I guess, it would be good to signal me if start contradict myself.
 ## Conflict resolution (in order)
 
 1. **File marker > commit message** — a marker is tied to a location, more specific than a general commit message

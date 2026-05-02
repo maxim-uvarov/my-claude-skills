@@ -10,12 +10,10 @@ The subject prefix is `gi:` (quiet — the commit *is* the unit, no surrounding 
 
 ## Markers
 
-- Native comment syntax of the file, prefixed with `!!`, always single-line
+- Native single-line comment of the file, prefixed with `!!`. Examples: `# !! ...` (Python/Nu/Shell/YAML), `// !! ...` (JS/Rust/Go/C), `-- !! ...` (SQL), `/* !! ... */` (CSS), `<!-- !! ... -->` (HTML/Markdown).
 - Place on the line above or beside the target code
-- Removed after processing (remove the whole comment, including any closing delimiters like `*/` or `-->`, not just the `!!` token)
-- HTML/plain comments without `!!` are persistent context — leave alone
-
-See `examples/marker-syntax.md` for per-language syntax.
+- Removed after processing — remove the whole comment including any closing delimiters (`*/`, `-->`), not just the `!!` token
+- Comments without `!!` are persistent context — leave alone
 
 ## Reading user edits
 

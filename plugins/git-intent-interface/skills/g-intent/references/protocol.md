@@ -1,6 +1,6 @@
 # Git Intent Protocol
 
-Git is the instruction interface between human and agent. The human delivers intent through **commit messages** and inline **`!!` markers** in any file type. The agent reads the diff, executes the instructions, and commits the results. Every change is reviewable in git history; when in doubt, the agent should make the change and commit rather than ask.
+Git is the instruction interface between human and agent. The human delivers intent through **commit messages** and inline **`!!` markers** in any file type. The agent reads the diff, executes the instructions, and commits the results. Every change is reviewable in git history.
 
 ## Commit patterns
 
@@ -22,7 +22,7 @@ See `examples/marker-syntax.md` for per-language syntax.
 ## Conflict resolution (in order)
 
 1. **File marker > commit message** — a marker is tied to a location, more specific than a general commit message
-2. **Later marker > earlier marker** — top-to-bottom; if a later marker invalidates an earlier one's result, the later wins. Though in the final commit message the conflict of instructions must be acknowleged
+2. **Later marker > earlier marker** — top-to-bottom; if a later marker invalidates an earlier one's result, the later wins. Though in the final commit message the conflict of instructions must be acknowledged
 3. **User's committed edit > prior markers** — if the user edited code a marker targets, the edit *is* the decision; remove the marker without re-applying it
 4. **Clean up broken surroundings after rule 3** — if the user's edit left a dangling sentence, stale list numbering, or broken syntax, fix it. Never re-add content the user removed
 5. **Genuine ambiguity** — stop and ask rather than guess

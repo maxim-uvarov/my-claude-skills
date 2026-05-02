@@ -1,8 +1,5 @@
 # !! Marker Syntax by Language
 
-Markers use the native comment syntax of the file, prefixed with `!!`.
-Place on the line above or beside the target code.
-
 ## Python / Nushell / Shell
 
 ```python
@@ -75,22 +72,3 @@ Any marker containing `[keep]` is preserved after processing:
 def legacy_handler():
     pass
 ```
-
-## Commit message examples
-
-```
-gi:
-```
-Process all markers, no global instruction.
-
-```
-gi: refactor for readability
-```
-Process markers AND apply "refactor for readability" globally.
-
-```
-add error handling to parser
-
-the CLI crashes on malformed input, need to handle gracefully
-```
-Plain message (no `gi:` prefix) — if files contain `!!` markers, they are still processed; the message is context.

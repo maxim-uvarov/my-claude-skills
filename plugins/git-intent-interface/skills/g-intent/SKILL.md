@@ -28,7 +28,7 @@ If `$ARGUMENTS` is empty or not a positive integer, default to `1`.
 3. **Classify each commit** in the range:
 
    - **Marker commit** — the diff adds `!!` markers, or the subject is
-     `!!` / `!! <text>`. Run the apply procedure (step 5).
+     `gi:` / `gi: <text>`. Run the apply procedure (step 5).
    - **Choice commit** — plain subject, no new markers; the user's
      edits *are* the decision. Run the propagation procedure (step 6).
    - **Mixed** — both. Apply first, then propagate.
@@ -41,7 +41,7 @@ If `$ARGUMENTS` is empty or not a positive integer, default to `1`.
    - For each `!!` marker: read the instruction text, apply it to the
      target code/text, remove the whole marker comment. Exception:
      markers containing `[keep]` are preserved as-is
-   - If the commit subject is `!! <text>`, apply `<text>` globally to
+   - If the commit subject is `gi: <text>`, apply `<text>` globally to
      the committed files
    - Resolve conflicts per protocol rules 1–5
 

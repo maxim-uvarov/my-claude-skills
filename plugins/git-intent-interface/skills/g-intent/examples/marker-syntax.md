@@ -79,12 +79,12 @@ def legacy_handler():
 ## Commit message examples
 
 ```
-!!
+gi:
 ```
 Process all markers, no global instruction.
 
 ```
-!! refactor for readability
+gi: refactor for readability
 ```
 Process markers AND apply "refactor for readability" globally.
 
@@ -93,4 +93,4 @@ add error handling to parser
 
 the CLI crashes on malformed input, need to handle gracefully
 ```
-Plain message (no `!!`) — if files contain `!!` markers, they are still processed; the message is context.
+Plain message (no `gi:` prefix) — if files contain `!!` markers, they are still processed; the message is context.

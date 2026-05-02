@@ -4,9 +4,7 @@ Git is the instruction interface between human and agent. The human delivers int
 
 ## Commit patterns
 
-1. `gi:` alone — process markers in committed files; no global instruction
-2. `gi: <text>` — process markers AND apply `<text>` globally to the files
-3. Commit by user with plain message describing change —  propagate the change in other places of this or relevant docs. Message is context for diff, not an instruction
+A commit subject may carry an optional global instruction prefixed with `gi: <text>` — this applies to all files in the commit. Otherwise the subject is context for the diff, not an instruction. The agent treats every commit the same: apply any `!!` markers, apply any `gi: <text>` global instruction, propagate the resulting decision to stale references elsewhere. Empty steps are no-ops.
 
 The subject prefix is `gi:` (quiet — the commit *is* the unit, no surrounding noise to fight) while inline markers are `!!` (loud — they must stand out against surrounding code).
 

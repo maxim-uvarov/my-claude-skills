@@ -62,13 +62,3 @@ python_version: "3.10"
 ## Authentication
 Send a token in the header...
 ```
-
-## [keep] modifier
-
-Any marker containing `[keep]` is preserved after processing:
-
-```python
-# !! [keep] this function is intentionally duplicated — do not deduplicate
-def legacy_handler():
-    pass
-```

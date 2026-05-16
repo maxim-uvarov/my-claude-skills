@@ -1,6 +1,6 @@
 ---
 name: git-intent
-version: 0.3.0
+version: 0.4.0
 description: Process commits as instructions — execute `!!` inline markers and `gi: <text>` commit-subject instructions, propagate user-committed choices through the codebase. Use when the user says "git-intent", "process", "apply intent", or pastes a `git log` containing `!!` markers or `gi:` subjects.
 argument-hint: <N>
 allowed-tools: Bash, Read, Edit, Write, Grep, Glob

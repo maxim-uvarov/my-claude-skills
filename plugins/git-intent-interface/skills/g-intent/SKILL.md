@@ -8,11 +8,25 @@ allowed-tools: Bash, Read, Edit, Write, Grep, Glob
 
 Git is the instruction interface between human and agent. The human delivers intent through commit messages and inline `!!` markers in any file type. The agent reads the diff, executes the instructions, and commits the results. Every change is reviewable in git history.
 
+## Why
+
+Chat is awkward for two things: instructions targeting many scattered points in a file (the user can't easily attach a comment at each), and reviewing large agent responses (no fast way to give feedback per section). Move both into a file and let git carry the loop — the user sees a diff, can revert individual hunks, and can leave `!!` markers right where a change should land. The agent should commit promptly so each step is a stable rollback point. If the agent's reply would be large, write it to `todo/` or `specs/`, not the chat.
+
+It's a REPL cycle: user instructs, sees the diff, judges, instructs again. Git adds what a plain REPL lacks — per-step rollback and a history you can return to.
+
+## Instruction channels
+
+Three channels carry user intent into a commit:
+
+- **`!!` markers** in any file — pinpoint instructions next to the target.
+- **Commit message** — explanation/context for the committed edit, optionally prefixed `gi:` (git intent). If the message reads as an imperative ("rename foo to bar", "expand this section"), treat it as actionable.
+- **Direct edit** — the user's edit itself, with no marker and no commit-message text, is also an instruction. The edit *is* the decision; the agent's job is to honor and propagate it.
+
 If `$ARGUMENTS` is empty or not a positive integer, default to `1`.
 
 ## Commit patterns
 
-A commit subject may carry an optional global instruction prefixed with `gi: <text>` — this applies to all files in the commit. Otherwise the subject is context for the diff, not an instruction. The agent treats every commit the same: apply any `!!` markers, apply any `gi: <text>` global instruction, propagate the resulting decision to stale references elsewhere. Empty steps are no-ops.
+A commit message — with or without the `gi:` prefix — defaults to **explanation** of what the user already committed; the edit itself is the decision, and the agent honors and propagates it without re-executing the text. If the message reads as an **imperative**, treat it as actionable and apply it to the commit's files. When the role is unclear, ask. The pipeline is uniform: apply any `!!` markers, apply any imperative commit message, propagate the resulting decision to stale references elsewhere. Empty steps are no-ops.
 
 The subject prefix is `gi:` (quiet — the commit *is* the unit, no surrounding noise to fight) while inline markers are `!!` (loud — they must stand out against surrounding code).
 
@@ -39,7 +53,7 @@ The subject prefix is `gi:` (quiet — the commit *is* the unit, no surrounding 
 
 4. **For each commit, run the pipeline:**
    - **Apply markers** — for each `!!` marker added in the diff, read the instruction text, apply it to the target code/text, remove the whole marker comment (including any closing delimiters like `*/` or `-->`).
-   - **Apply global instruction** — if the subject is `gi: <text>`, apply `<text>` to all files in the commit.
+   - **Apply imperative commit message** — if the message (with or without `gi:`) reads as a command, apply it to the commit's files. If it reads as explanation, skip — the edit itself is the decision.
    - **Propagate the decision** — scan each file in the commit scope for references that contradict the resulting state (stale branches, removed APIs, old behavior descriptions, obsolete rationale). If the decision names a symbol, path, API, or config key, also `grep` the broader repo. Clean up broken surroundings left by user edits, per *Reading user edits* above.
 
    Empty markers, empty global instruction, and no propagation needed are all valid no-ops — the pipeline runs unconditionally.

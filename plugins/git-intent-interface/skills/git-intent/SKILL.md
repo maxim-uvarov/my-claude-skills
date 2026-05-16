@@ -1,7 +1,7 @@
 ---
-name: g-intent
+name: git-intent
 version: 0.3.0
-description: Process commits as instructions — execute `!!` inline markers and `gi: <text>` commit-subject instructions, propagate user-committed choices through the codebase. Use when the user says "g-intent", "process", "apply intent", or pastes a `git log` containing `!!` markers or `gi:` subjects.
+description: Process commits as instructions — execute `!!` inline markers and `gi: <text>` commit-subject instructions, propagate user-committed choices through the codebase. Use when the user says "git-intent", "process", "apply intent", or pastes a `git log` containing `!!` markers or `gi:` subjects.
 argument-hint: <N>
 allowed-tools: Bash, Read, Edit, Write, Grep, Glob
 ---
@@ -12,7 +12,7 @@ Git is the instruction interface between human and agent. The human delivers int
 
 Chat is awkward for two things: instructions targeting many scattered points in a file (the user can't easily attach a comment at each), and reviewing large agent responses (no fast way to give feedback per section). Move both into a file and let git carry the loop — the user sees a diff, can revert individual hunks, and can leave `!!` markers right where a change should land. The agent should commit promptly so each step is a stable rollback point. If the agent's reply would be large, write it to `todo/` or `specs/`, not the chat.
 
-It's a REPL cycle: user instructs, sees the diff, judges, instructs again. Git adds what a plain REPL lacks — per-step rollback and a history you can return to. That history is the workflow's main artifact: an auditable record of decisions, their motivations, and the paths that were considered and rejected. The iterative history is preserved on archival (see `/g-intent-squash-archive`) precisely so the rejected paths aren't lost.
+It's a REPL cycle: user instructs, sees the diff, judges, instructs again. Git adds what a plain REPL lacks — per-step rollback and a history you can return to. That history is the workflow's main artifact: an auditable record of decisions, their motivations, and the paths that were considered and rejected. The iterative history is preserved on archival (see `/git-intent-squash-archive`) precisely so the rejected paths aren't lost.
 
 ## Instruction channels
 
@@ -79,4 +79,4 @@ The subject prefix is `gi:` (quiet — the commit *is* the unit, no surrounding 
 
 ## Related
 
-- `/g-intent-squash-archive` — when done iterating, squash the branch into one clean commit preserved as a git tag
+- `/git-intent-squash-archive` — when done iterating, squash the branch into one clean commit preserved as a git tag

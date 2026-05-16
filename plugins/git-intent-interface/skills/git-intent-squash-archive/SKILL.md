@@ -1,7 +1,7 @@
 ---
-name: g-intent-squash-archive
+name: git-intent-squash-archive
 version: 0.3.0
-description: Squash all commits on the current branch into one, preserving the original history in a git tag. Use when the user says "squash branch" or "g-intent-squash-archive".
+description: Squash all commits on the current branch into one, preserving the original history in a git tag. Use when the user says "squash branch" or "git-intent-squash-archive".
 allowed-tools: Bash
 ---
 
@@ -26,4 +26,4 @@ Archive and squash all commits on the current branch:
 
 ## Related
 
-- `/g-intent` — process commits as instructions and propagate choices before squashing
+- `/git-intent` — process commits as instructions and propagate choices before squashing

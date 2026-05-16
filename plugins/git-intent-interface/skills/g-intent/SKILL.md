@@ -12,7 +12,7 @@ Git is the instruction interface between human and agent. The human delivers int
 
 Chat is awkward for two things: instructions targeting many scattered points in a file (the user can't easily attach a comment at each), and reviewing large agent responses (no fast way to give feedback per section). Move both into a file and let git carry the loop — the user sees a diff, can revert individual hunks, and can leave `!!` markers right where a change should land. The agent should commit promptly so each step is a stable rollback point. If the agent's reply would be large, write it to `todo/` or `specs/`, not the chat.
 
-It's a REPL cycle: user instructs, sees the diff, judges, instructs again. Git adds what a plain REPL lacks — per-step rollback and a history you can return to.
+It's a REPL cycle: user instructs, sees the diff, judges, instructs again. Git adds what a plain REPL lacks — per-step rollback and a history you can return to. That history is the workflow's main artifact: an auditable record of decisions, their motivations, and the paths that were considered and rejected. The iterative history is preserved on archival (see `/g-intent-squash-archive`) precisely so the rejected paths aren't lost.
 
 ## Instruction channels
 
@@ -65,9 +65,11 @@ The subject prefix is `gi:` (quiet — the commit *is* the unit, no surrounding 
 
    Decision: <one sentence>
    Why: <non-obvious reasoning, 1–2 sentences>
+   Rejected: <alternative considered and dropped, with the reason — omit if none>
    Propagated: <other places touched — omit this line if none>
    ```
 
+   - **Record rejected paths.** If the user considered an alternative and dropped it (in chat, via a `!!` marker that was later removed, or by reverting a prior hunk), capture it as `Rejected: <alt> — <why>`. The dead end is part of the decision graph and would otherwise be lost.
    - **Don't list conflicts you looked for and didn't find.** "Nothing else changed" is noise; absence is the default.
    - **Don't restate the diff.** If the body is longer than the diff, the body is wrong unless the reasoning is genuinely complex.
    - **Skip binary files** in the diff.

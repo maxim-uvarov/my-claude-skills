@@ -43,6 +43,11 @@ plots. Inline data forces `$"..."` interpolation (which then needs `\(` `\)` esc
 
 ## Recipes
 
+A worked gallery of 17+ chart types with real rendered output — bars (clustered/stacked),
+histogram, impulses, steps, filled curves, error bars, candlesticks, smoothing, log axes,
+time series, multiplot, functions, and nu-pipeline→chart examples — is in
+[references/gallery.md](references/gallery.md). The essentials:
+
 All read `/tmp/plot.dat` written as in step 2. Column numbers in `using` are **1-based**;
 `using 0:N` uses the row index (pseudo-column 0) as x — used for categorical x-axes.
 

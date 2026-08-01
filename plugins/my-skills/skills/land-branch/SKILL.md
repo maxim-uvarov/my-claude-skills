@@ -35,6 +35,8 @@ Steps 1–8 only read. Nothing is changed until the user confirms.
 
 6. **Read the history for the message.** `git log <base>..HEAD` with full bodies. This is the part that must not be lost: why this approach, why an alternative was rejected, what the user said. Drop only the mechanics. If the branch has a `gi/` canvas or the current session holds reasoning that never reached a commit body, pull it in here — the tag preserves the old bodies, but only this commit is read on the trunk.
 
+   **No run status in the body.** Lines like `235 tests passed`, `all checks green`, `verified with nutest` do not belong in the commit message. They were true at one moment on one tree; on the trunk they are unverifiable and often already false. Report them in the chat reply, where the user reads them while they still mean something. The body carries *why*, not *it worked*.
+
 7. **Find the working material.** `git diff --name-status <base>..HEAD -- todo/ gi/`. Keep the status letters; they decide what the working tree looks like afterwards (step 11).
 
 8. **Judgement, then STOP.** Two calls to make first:
@@ -56,13 +58,15 @@ Steps 1–8 only read. Nothing is changed until the user confirms.
     - `M` (modified) → the change stays in the working tree, unstaged.
     - `D` (deleted) → the file is missing from disk while the index holds it back; shows as an unstaged deletion.
 
+    A note this branch **finished** is not parked any more — it is done. Say so at step 14 and offer to delete it, instead of leaving it in the working tree where the next session reads it as open work. Same for a `gi/` canvas whose thread closed with this branch. Judge each file: only the ones this branch actually resolved — a branch often adds a note about something it did not fix, and that one stays. The archive tag holds every one of them, so deleting loses nothing.
+
     Then check `git diff --cached --quiet`: if nothing is staged any more, the branch held *only* working material. Report that and stop — there is nothing to land.
 
 12. **Commit** with the message from step 6, plus an `Archive: archive/<branch>` trailer.
 
 13. **Merge.** `git switch <trunk>` then `git merge --ff-only <branch>`. With the rebase from step 5 if the trunk moved.
 
-14. **Report**, briefly: the trunk's new commit, that the user is now standing on `<trunk>` (say it plainly — the next edit would otherwise land there), any leftover working-tree state from step 11, and — if step 9 ran — that `git log archive/<branch>` still holds the full history. Do not push, and do not delete the branch — offer both as commands if the user wants them.
+14. **Report**, briefly: the trunk's new commit, that the user is now standing on `<trunk>` (say it plainly — the next edit would otherwise land there), and — if step 9 ran — that `git log archive/<branch>` still holds the full history. Split the leftover working-tree state from step 11 into notes still open and artifacts this branch completed; for the completed ones give the `rm` command (`allowed-tools` here is git only, so the user runs it). This is also where run status belongs — `nutest run` → `57 passed`, not in the commit body. Do not push, and do not delete the branch — offer both as commands if the user wants them.
 
 ## Related
 

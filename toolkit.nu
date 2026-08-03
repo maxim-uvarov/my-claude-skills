@@ -1,108 +1,56 @@
-# Development convenience commands for the nushell-skills marketplace.
-# These are NOT part of the distributed plugins — they help maintain skill content.
+# Push skills and output styles from this repo's plugins/ into ~/.claude/, so they take effect locally.
 
-const skills_global_dir = '~/.claude/skills'
-const managed_skills = ['nushell-style' 'nushell-completions' 'nushell-history' 'nushell-literate-programming']
+const claude_dir = '~/.claude'
 
-# Check if a path has uncommitted changes in its git repository
-def has-uncommitted-changes [path: path]: nothing -> bool {
-    if not ($path | path exists) { return false }
-
-    let dir = if ($path | path type) == 'dir' { $path } else { $path | path dirname }
-
-    let git_check = do { cd $dir; ^git rev-parse --git-dir } | complete
-    if $git_check.exit_code != 0 { return false }
-
-    let status = do { cd $dir; ^git status --porcelain -- $path } | complete
-    ($status.stdout | str trim | is-not-empty)
+# Every skill/output-style across all plugins, with its kind and source path
+def list-items []: nothing -> table<name: string, kind: string, source: path> {
+    let skills = (glob 'plugins/*/skills/*' | where ($it | path type) != file | each {|p|
+        {name: ($p | path basename), kind: 'skills', source: $p}
+    })
+    let output_styles = (glob 'plugins/*/output-styles/*.md' | each {|p|
+        {name: ($p | path parse | get stem), kind: 'output-styles', source: $p}
+    })
+    $skills ++ $output_styles
 }
 
-# Resolve the plugin skill directory for a given skill name
-def skill-plugin-dir [skill: string]: nothing -> string {
-    $"plugins/($skill)/skills/($skill)"
+def "nu-complete skill-items" []: nothing -> list<string> {
+    list-items | get name
 }
 
 export def main [] { }
 
-# Copy skills from ~/.claude/skills into plugin directories
-@example "Vendor all skills" { nu toolkit.nu vendor }
-@example "Vendor without committing" { nu toolkit.nu vendor --no-commit }
-export def 'main vendor' [
-    --no-commit # Skip creating a git commit after copying
-] {
-    let global_dir = $skills_global_dir | path expand
-    mut total_files = 0
+# Copy skills/output-styles from plugins/ into ~/.claude/ (all, or one by name)
+@example "Push everything" { nu toolkit.nu push }
+@example "Push one skill" { nu toolkit.nu push land-branch }
+export def 'main push' [
+    name?: string@"nu-complete skill-items" # Only push this skill/output-style; omit to push all
+]: nothing -> nothing {
+    let global_dir = $claude_dir | path expand
+    let items = list-items | where { $name == null or $in.name == $name }
 
-    for skill in $managed_skills {
-        let source = $"($global_dir)/($skill)"
-        let dest = skill-plugin-dir $skill
+    if ($items | is-empty) {
+        error make {msg: (
+            if $name == null {
+                'No skills or output-styles found under plugins/'
+            } else {
+                $"No skill or output-style named ($name)"
+            }
+        )}
+    }
 
-        if not ($source | path exists) {
-            print $"(ansi yellow)⚠(ansi reset) ($skill): not found at ($source)"
-            continue
-        }
+    for item in $items {
+        let filename = if $item.kind == 'output-styles' { $"($item.name).md" } else { $item.name }
+        let dest = $global_dir | path join $item.kind $filename
+        let tmp = $"($dest)~"
 
+        if ($tmp | path exists) { rm -rf $tmp }
+        mkdir ($dest | path dirname)
+        cp -r $item.source $tmp
         if ($dest | path exists) { rm -rf $dest }
-        mkdir $dest
-        cp -r ($"($source)/*" | into glob) $dest
-        let file_count = glob $"($dest)/**/*" | where ($it | path type) == 'file' | length
-        print $"(ansi green)✓(ansi reset) ($skill) \(($file_count) files\)"
-        $total_files = $total_files + $file_count
+        mv $tmp $dest
+
+        print $"(ansi green)✓(ansi reset) ($item.kind)/($item.name)"
     }
 
-    print $"\n(ansi attr_dimmed)Copied ($total_files) files from ($global_dir)(ansi reset)"
-
-    if not $no_commit {
-        let status = git status --porcelain plugins/ | str trim
-        if $status != "" {
-            git add plugins/
-            let date = date now | format date "%Y-%m-%d"
-            git commit -m $"chore: vendor skills \(($date)\)"
-            print $"(ansi green)Committed skill updates(ansi reset)"
-        } else {
-            print $"(ansi attr_dimmed)No changes to commit(ansi reset)"
-        }
-    }
-}
-
-# Copy skills from plugin directories to ~/.claude/skills (for local testing)
-@example "Install skills locally" { nu toolkit.nu install-locally }
-@example "Force overwrite" { nu toolkit.nu install-locally --force }
-export def 'main install-locally' [
-    --force # Overwrite even if destination has uncommitted changes
-] {
-    let global_dir = $skills_global_dir | path expand
-
-    if not $force {
-        let dirty = $managed_skills
-            | each { $"($global_dir)/($in)" }
-            | where { has-uncommitted-changes $in }
-        if ($dirty | is-not-empty) {
-            print $"(ansi yellow)⚠(ansi reset) Uncommitted changes in destination:"
-            $dirty | each { print $"  ($in)" }
-            print $"\n  Use (ansi cyan)--force(ansi reset) to overwrite"
-            return
-        }
-    }
-
-    mut total_files = 0
-
-    for skill in $managed_skills {
-        let source = skill-plugin-dir $skill
-        let dest = $"($global_dir)/($skill)"
-
-        if not ($source | path exists) {
-            print $"(ansi yellow)⚠(ansi reset) ($skill): not found at ($source)"
-            continue
-        }
-
-        if ($dest | path exists) { rm -rf $dest }
-        cp -r $source $dest
-        let file_count = glob $"($dest)/**/*" | where ($it | path type) == 'file' | length
-        print $"(ansi green)✓(ansi reset) ($skill) \(($file_count) files\)"
-        $total_files = $total_files + $file_count
-    }
-
-    print $"\n(ansi attr_dimmed)Installed ($total_files) files to ($global_dir)(ansi reset)"
-    print $"(ansi green)✓(ansi reset) Skills ready at (ansi cyan)($global_dir)(ansi reset)"
+    print $"\n(ansi attr_dimmed)Pushed ($items | length) item\(s\) to ($global_dir)(ansi reset)"
 }

@@ -43,7 +43,7 @@ Steps 1–8 only read. Nothing is changed until the user confirms.
    - Already one clean commit with a good body? Then there is nothing to squash — skip straight to the merge (step 13). No `reset --soft`, no new commit, no `Archive:` trailer, and **no archive tag**.
    - Does the branch really hold two unrelated changes? Then propose two commits, not one. Follow the letter here and you ship a commit that lies about being atomic. Say so even when the user did not pass `--grouped`: the mode is theirs to choose, but the observation is yours to make.
 
-   Show the user, in one block: the commits being squashed, the generated message, the `todo/`/`gi/` paths being dropped, an `archive/<branch>` overwrite warning if `git tag -l` finds one, the rebase warning from step 5, and the exact merge command. **Wait for confirmation.**
+   Show the user, in one block: the commits being squashed, the generated message, the `todo/`/`gi/` paths being dropped, an `archive/<branch>` overwrite warning if `git tag -l` finds one, the rebase warning from step 5, the exact merge command, and the branch-delete command from step 13a. **Wait for confirmation.**
 
 ## Landing
 
@@ -66,7 +66,9 @@ Steps 1–8 only read. Nothing is changed until the user confirms.
 
 13. **Merge.** `git switch <trunk>` then `git merge --ff-only <branch>`. With the rebase from step 5 if the trunk moved.
 
-14. **Report**, briefly: the trunk's new commit, that the user is now standing on `<trunk>` (say it plainly — the next edit would otherwise land there), and — if step 9 ran — that `git log archive/<branch>` still holds the full history. Split the leftover working-tree state from step 11 into notes still open and artifacts this branch completed; for the completed ones give the `rm` command (`allowed-tools` here is git only, so the user runs it). This is also where run status belongs — `nutest run` → `57 passed`, not in the commit body. Do not push, and do not delete the branch — offer both as commands if the user wants them.
+    13a. **Delete the branch.** The tag from step 9 is what makes this safe — every commit it points at, including the dropped `todo/`/`gi/` ones, stays reachable through `archive/<branch>`, so nothing is lost. On the squash path, `git reset --soft` produced a new commit object that differs from the branch tip, so git won't recognize it as merged: use `git branch -D <branch>`. When step 8 sent you straight to the merge (already one clean commit, no squash, no tag), the branch tip *is* the trunk tip now, so the plain `git branch -d <branch>` works.
+
+14. **Report**, briefly: the trunk's new commit, that the user is now standing on `<trunk>` (say it plainly — the next edit would otherwise land there), that `<branch>` was deleted, and — if step 9 ran — that `git log archive/<branch>` still holds the full history. Split the leftover working-tree state from step 11 into notes still open and artifacts this branch completed; for the completed ones give the `rm` command (`allowed-tools` here is git only, so the user runs it). This is also where run status belongs — `nutest run` → `57 passed`, not in the commit body. Do not push.
 
 ## Grouped mode (`--grouped`)
 
@@ -95,6 +97,8 @@ There is no hunk splitting in this skill — `rebase -i` is not available and ha
 `git switch <trunk>`, then `git merge --no-ff <branch>`. Write the step 6 reasoning summary and the `Archive: archive/<branch>` trailer into the **merge commit's** body.
 
 `--no-ff` merges a diverged trunk by itself, so the step 5 rebase is not needed. A conflict is still possible, and it still needs the user's hands.
+
+13a is unchanged in shape but the branch is always merged as itself here (`--no-ff`, not a squash onto it), so `git branch -d <branch>` is always the right form — never `-D`.
 
 Step 14 gains one line: `git log --first-parent <trunk>` hides the group commits.
 

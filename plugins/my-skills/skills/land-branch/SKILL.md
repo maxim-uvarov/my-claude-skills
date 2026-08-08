@@ -1,6 +1,6 @@
 ---
 name: land-branch
-description: Land a finished branch on the trunk as a coherent, reviewed sequence of commits — read the branch's own history, fold any commit that only corrects or completes an earlier one's subject (a review-found bug and its fix, a typo, a reverted attempt) into whatever it corrects, archive the original history in a tag, keep `todo/` and `gi/` out of the trunk, then merge. Usually lands as one squashed commit; lands as a few commits by subject instead when the branch genuinely bundles more than one (merged with `--no-ff`) — pass `--grouped` to skip straight there. Use when the user says "land the branch", "land this", "merge to main", "finish this branch", or "squash and merge".
+description: Land a finished branch on the trunk as a coherent, reviewed sequence of commits — read the branch's own history, fold any commit that only corrects or completes an earlier one's subject (a review-found bug and its fix, a typo, a reverted attempt) into whatever it corrects, archive the original history in a tag, keep `todo/` and `gi/` out of the trunk, then merge. Usually lands as one squashed commit; lands as a few commits by subject instead when the branch genuinely bundles more than one (fast-forwarded onto the trunk one after another) — pass `--grouped` to skip straight there. Use when the user says "land the branch", "land this", "merge to main", "finish this branch", or "squash and merge".
 argument-hint: [--grouped] [trunk branch, if not main/master]
 allowed-tools: Bash(git *), Write
 ---
@@ -96,7 +96,7 @@ Steps 1–8 only read. Nothing is changed until the user confirms.
 
 Step 8's own analysis is what decides a branch needs more than one commit — not a flag. `--grouped` only saves a round trip: pass it when you already know the branch bundles more than one subject, and the plan goes straight to the multi-commit shape instead of first proposing a single squash.
 
-The trade-off is the same either way, and the user takes it on by confirming the plan: the chapter commits **do** reach the trunk, so `git log <trunk>` shows them all. `git log --first-parent <trunk>` is the clean view. That means the merge commit is what a later reader lands on first — its body, not the chapter bodies, must carry the reasoning that has to survive.
+The trade-off is the same either way, and the user takes it on by confirming the plan: the chapter commits reach the trunk as ordinary commits, one after another, with no merge commit around them. A multi-subject branch is an accident of workflow, not a unit — a merge commit would record that accident, and its body would have to describe several subjects at once. Landing plain keeps the history one shape: linear, exactly like the squash path. The cost: each chapter's body must be self-sufficient, because no other place survives to carry its reasoning.
 
 Steps 1–7 and 9 run unchanged. The archive tag still matters: `reset --soft` makes the original commits unreachable here too.
 
@@ -123,19 +123,15 @@ Name every split file in the step 8 plan, with the mechanism used. An intermedia
 
 - `git reset --soft <base>` — the whole branch is staged, as in step 10.
 - `git restore --staged .` — unstage all of it. The working tree is untouched.
-- Per chapter: `git add <the chapter's paths>` — a split file is staged by its mechanism from *Splitting a shared file* instead — then `git commit` with that chapter's message.
+- Per chapter: `git add <the chapter's paths>` — a split file is staged by its mechanism from *Splitting a shared file* instead — then `git commit` with that chapter's message. The last chapter's body also carries the `Archive: archive/<branch>` trailer; one pointer is enough.
 - `todo/` and `gi/` are never added, so step 11's `git restore --staged` has nothing to do and disappears — the same result reached by doing nothing. What they leave behind in the working tree, and your duty to report it instead of claiming a clean tree, is exactly as step 11 describes.
 - If every chapter comes out empty, the branch held only working material. Report that and stop, as step 11 says.
 
-### Step 13, replaced
+### Step 13, unchanged
 
-`git switch <trunk>`, then `git merge --no-ff <branch>`. Write the step 6 reasoning summary and the `Archive: archive/<branch>` trailer into the **merge commit's** body.
+Step 13 runs as written: `git switch <trunk>`, then `git merge --ff-only <branch>` — with the step 5 rebase first if the trunk moved (several commits to replay now, and a conflict there still needs the user's hands).
 
-`--no-ff` merges a diverged trunk by itself, so the step 5 rebase is not needed. A conflict is still possible, and it still needs the user's hands.
-
-13a is unchanged in shape but the branch is always merged as itself here (`--no-ff`, not a squash onto it), so `git branch -d <branch>` is always the right form — never `-D`.
-
-Step 14 gains one line: `git log --first-parent <trunk>` hides the chapter commits.
+13a: `reset --soft` rebuilt the chapters, but the ff-merge just put that rebuilt tip on the trunk itself, so the plain `git branch -d <branch>` works.
 
 ## Related
 

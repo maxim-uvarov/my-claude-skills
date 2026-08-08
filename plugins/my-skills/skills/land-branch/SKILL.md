@@ -2,7 +2,7 @@
 name: land-branch
 description: Land a finished branch on the trunk as a coherent, reviewed sequence of commits — read the branch's own history, fold any commit that only corrects or completes an earlier one's subject (a review-found bug and its fix, a typo, a reverted attempt) into whatever it corrects, archive the original history in a tag, keep `todo/` and `gi/` out of the trunk, then merge. Usually lands as one squashed commit; lands as a few commits by subject instead when the branch genuinely bundles more than one (merged with `--no-ff`) — pass `--grouped` to skip straight there. Use when the user says "land the branch", "land this", "merge to main", "finish this branch", or "squash and merge".
 argument-hint: [--grouped] [trunk branch, if not main/master]
-allowed-tools: Bash(git *)
+allowed-tools: Bash(git *), Write
 ---
 
 A working branch carries rollback points: a bug review found and the atomic commit that fixed it, an attempt and the commit that reverts it, a typo caught two commits later. These are not sloppy — an agent-authored fix is usually just as clean and atomic as the commit it corrects. What makes a commit a rollback point is its subject, not its tone: it exists only to correct or complete something an earlier commit in the same branch already claimed. The moment the branch lands none of that may survive — not as its own commit, not as a line in a message. A later agent reading `git log` on the trunk should find the coherent story the branch tells, not the back-and-forth it took to arrive there.
@@ -19,19 +19,41 @@ What the exception buys is one confirmation, not silence: show the whole plan at
 
 Two things stay off-limits even here: **never push**, and never run this on the trunk itself.
 
+## Repo snapshot
+
+The block below runs once, before any of this reaches Claude — steps 1, 3, and 4 start with the answer already in hand instead of each costing its own tool call and turn. It assumes the default trunk (`main`, falling back to `master`); it does not read `$ARGUMENTS`, so a trunk name given there is not covered — resolve that case by hand, per step 3.
+
+```!
+branch=$(git branch --show-current)
+echo "current-branch: ${branch:-<detached HEAD>}"
+if git rev-parse --verify -q main >/dev/null 2>&1; then trunk=main
+elif git rev-parse --verify -q master >/dev/null 2>&1; then trunk=master
+else trunk=""
+fi
+echo "default-trunk: ${trunk:-<none found>}"
+if [ -n "$trunk" ]; then
+  base=$(git merge-base "$trunk" HEAD 2>/dev/null)
+  echo "merge-base: $base"
+  echo "trunk-head: $(git rev-parse "$trunk")"
+  echo "trunk-moved: $([ "$(git rev-parse "$trunk")" = "$base" ] && echo no || echo yes)"
+  echo "commits base..HEAD:"
+  git log --oneline "$base"..HEAD 2>/dev/null
+fi
+```
+
 ## Procedure
 
 Steps 1–8 only read. Nothing is changed until the user confirms.
 
-1. **Branch guard.** `git branch --show-current`. If it returns `main` or `master` — **stop immediately** and say so. Do not continue.
+1. **Branch guard.** Use `current-branch` from the snapshot above. If it is `main` or `master` — **stop immediately** and say so. Do not continue.
 
 2. **Clean-tree check.** `git status --porcelain` must be empty. If not, stop and ask the user to commit or stash. A soft reset would otherwise sweep unrelated edits into the landing commit.
 
-3. **Find the trunk.** Strip `--grouped` out of `$ARGUMENTS` first — it's the multi-commit shortcut, not a branch name. What remains is the trunk name if given, else `main`, else `master` (`git rev-parse --verify <name>`).
+3. **Find the trunk.** Strip `--grouped` out of `$ARGUMENTS` first — it's the multi-commit shortcut, not a branch name. What remains is the trunk name if given (verify it yourself with `git rev-parse --verify <name>` — the snapshot only covers the default case), else the snapshot's `default-trunk`.
 
-4. **Find the base.** `git merge-base <trunk> HEAD`. Then `git log --oneline <base>..HEAD` — if empty, report "nothing to land" and exit.
+4. **Find the base.** For the snapshot's default trunk, its `merge-base` and `commits base..HEAD` already answer this. For a custom trunk from step 3, run `git merge-base <trunk> HEAD` and `git log --oneline <base>..HEAD` yourself. Either way, an empty commit list means "nothing to land" — report that and exit.
 
-5. **Has the trunk moved?** Compare `git rev-parse <trunk>` with `<base>`. If they differ, the trunk advanced and `--ff-only` will fail. The plan then gains a `git rebase <trunk>` between the squash and the merge — one commit to replay, but say plainly that a conflict there needs the user's hands. Never substitute a merge commit for the rebase without saying so.
+5. **Has the trunk moved?** For the default trunk, the snapshot's `trunk-moved` already answers this. For a custom trunk, compare `git rev-parse <trunk>` with `<base>` yourself. If they differ, the trunk advanced and `--ff-only` will fail. The plan then gains a `git rebase <trunk>` between the squash and the merge — one commit to replay, but say plainly that a conflict there needs the user's hands. Never substitute a merge commit for the rebase without saying so.
 
 6. **Read the history for the message.** `git log <base>..HEAD` with full bodies. This is the part that must not be lost: why this approach, why an alternative was rejected, what the user said. Drop only the mechanics — not just `wip` or a typo fix, but any commit whose whole job is correcting or completing an earlier commit's own subject, however cleanly that correction itself is written: a bug review found and its atomic fix, an attempt and the commit that reverts it. None of these earns a line, even a summarized one; the message describes the approach that survived, not the road to it. If the branch has a `gi/` canvas or the current session holds reasoning that never reached a commit body, pull it in here — the tag preserves the old bodies, but only this commit is read on the trunk.
 
@@ -41,7 +63,7 @@ Steps 1–8 only read. Nothing is changed until the user confirms.
 
 8. **Judgement, then STOP.** Two calls to make first:
    - Already one clean commit with a good body? Then there is nothing to rewrite — skip straight to the merge (step 13). No `reset --soft`, no new commit, no `Archive:` trailer, and **no archive tag**.
-   - Otherwise, read the history from step 6 as a story, not a diff. The test for a chapter is subject, not tone: a commit that only corrects or completes an earlier commit's own subject — a bug review found and its atomic fix, an attempt and its revert, a typo caught later — is never its own chapter, however cleanly it is written itself; it folds into whichever commit it corrects and leaves no trace in any message (see *Folding corrections*, at the end of this file). A commit that opens a subject of its own — a second feature the user asked for on the same branch, say — is a chapter in its own right; two such subjects never fold together just because they share a branch. What is left after folding is the branch's real chapter count: usually one, occasionally a genuine few when the branch bundles more than one subject. Build exactly that many commits — never split further just because a correction happened along the way, never merge two subjects into one just because they happen to share a file (the collision rule, same section, decides that case). Say so plainly whenever the count comes out above one, whether or not `--grouped` was passed — the shape is the branch's own; `--grouped` only lets the user skip straight to it.
+   - Otherwise, read the history from step 6 as a story, not a diff. The test for a chapter is subject, not tone: a commit that only corrects or completes an earlier commit's own subject — a bug review found and its atomic fix, an attempt and its revert, a typo caught later — is never its own chapter, however cleanly it is written itself; it folds into whichever commit it corrects and leaves no trace in any message (see *Folding corrections*, at the end of this file). A commit that opens a subject of its own — a second feature the user asked for on the same branch, say — is a chapter in its own right; two such subjects never fold together just because they share a branch. What is left after folding is the branch's real chapter count: usually one, occasionally a genuine few when the branch bundles more than one subject. Build exactly that many commits — never split further just because a correction happened along the way, never merge two subjects into one just because they happen to share a file (*Splitting a shared file*, at the end of this file, decides that case). Say so plainly whenever the count comes out above one, whether or not `--grouped` was passed — the shape is the branch's own; `--grouped` only lets the user skip straight to it.
 
    Show the user, in one block: the chapters found and which original commits fold into each, the generated message(s), the `todo/`/`gi/` paths being dropped, an `archive/<branch>` overwrite warning if `git tag -l` finds one, the rebase warning from step 5, the exact merge command, and the branch-delete command from step 13a. **Wait for confirmation.**
 
@@ -84,13 +106,24 @@ A chapter is a subject in the branch's own story, not a raw file path — but pa
 
 This folding is automatic once you group by subject, and needs no hunk-editing to work: staging a path with `git add` after `reset --soft` stages that path's **final** working-tree content, not any one commit's diff. A bug fixed by its own later commit, a typo fixed three commits after, or a file added and then fully reverted, already comes out right — or vanishes entirely — in whichever chapter's commit picks up that path.
 
-There is still no hunk splitting in this skill — `rebase -i` is not available and hand-editing hunks is the user's job, not yours. Staging one path stages one final state, so whenever a file's changes cannot be cleanly attributed to a single chapter — whether because a correction's own changes touch two candidates, or because two independently-motivated subjects both happen to need that file — the overlap **cannot** be split: merge the affected chapters into one and name the file as the reason in the step 8 plan. Never let a file land in one chapter while its other change silently disappears — that ships a commit that does not build.
+When a file's changes cannot be attributed to a single chapter — a correction's own changes touch two candidates, or two independently-motivated subjects both need the file — the file is **split** between the chapters (next section), not the chapters merged. Merging chapters is the last resort, reached only when the split itself is unsafe: it erases the branch's real shape just because two subjects happened to share a file.
+
+### Splitting a shared file
+
+There is still no `rebase -i` and no editing inside a hunk — a split uses only mechanisms whose staged result can be checked. Two, tried in this order:
+
+1. **Ordered history — pure git.** If every commit of the earlier chapter that touches the file precedes every commit of the later one that touches it (check with `git log --oneline <base>..HEAD -- <file>`), then after the soft reset `git restore --source=<earlier chapter's last commit> --staged -- <file>` stages exactly the earlier chapter's version. No patch is built, and the staged state really existed on the branch — so it built at least once. The later chapter's plain `git add <file>` then stages the rest.
+2. **Interleaved history — whole-hunk patch.** Otherwise, take `git diff -- <file>` (index vs worktree, after the soft reset), write only the hunks belonging to the earlier chapter into a patch file in the scratchpad, and stage them with `git apply --cached <patch>`. Whole hunks only, copied verbatim: never edit lines inside a hunk.
+
+The limit that remains: when unrelated changes share a single hunk, there is no safe cut — merge the affected chapters into one and name the file as the reason in the step 8 plan. Never let a file land in one chapter while its other change silently disappears — that ships a commit that does not build.
+
+Name every split file in the step 8 plan, with the mechanism used. An intermediate commit holding part of a file may not build — the ordered-history mechanism avoids this, the patch one does not — and by confirming the plan the user takes that risk on.
 
 ### Steps 10–12, replaced
 
 - `git reset --soft <base>` — the whole branch is staged, as in step 10.
 - `git restore --staged .` — unstage all of it. The working tree is untouched.
-- Per chapter: `git add <the chapter's paths>`, then `git commit` with that chapter's message.
+- Per chapter: `git add <the chapter's paths>` — a split file is staged by its mechanism from *Splitting a shared file* instead — then `git commit` with that chapter's message.
 - `todo/` and `gi/` are never added, so step 11's `git restore --staged` has nothing to do and disappears — the same result reached by doing nothing. What they leave behind in the working tree, and your duty to report it instead of claiming a clean tree, is exactly as step 11 describes.
 - If every chapter comes out empty, the branch held only working material. Report that and stop, as step 11 says.
 

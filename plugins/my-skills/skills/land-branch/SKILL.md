@@ -19,19 +19,41 @@ What the exception buys is one confirmation, not silence: show the whole plan at
 
 Two things stay off-limits even here: **never push**, and never run this on the trunk itself.
 
+## Repo snapshot
+
+The block below runs once, before any of this reaches Claude — steps 1, 3, and 4 start with the answer already in hand instead of each costing its own tool call and turn. It assumes the default trunk (`main`, falling back to `master`); it does not read `$ARGUMENTS`, so a trunk name given there is not covered — resolve that case by hand, per step 3.
+
+```!
+branch=$(git branch --show-current)
+echo "current-branch: ${branch:-<detached HEAD>}"
+if git rev-parse --verify -q main >/dev/null 2>&1; then trunk=main
+elif git rev-parse --verify -q master >/dev/null 2>&1; then trunk=master
+else trunk=""
+fi
+echo "default-trunk: ${trunk:-<none found>}"
+if [ -n "$trunk" ]; then
+  base=$(git merge-base "$trunk" HEAD 2>/dev/null)
+  echo "merge-base: $base"
+  echo "trunk-head: $(git rev-parse "$trunk")"
+  echo "trunk-moved: $([ "$(git rev-parse "$trunk")" = "$base" ] && echo no || echo yes)"
+  echo "commits base..HEAD:"
+  git log --oneline "$base"..HEAD 2>/dev/null
+fi
+```
+
 ## Procedure
 
 Steps 1–8 only read. Nothing is changed until the user confirms.
 
-1. **Branch guard.** `git branch --show-current`. If it returns `main` or `master` — **stop immediately** and say so. Do not continue.
+1. **Branch guard.** Use `current-branch` from the snapshot above. If it is `main` or `master` — **stop immediately** and say so. Do not continue.
 
 2. **Clean-tree check.** `git status --porcelain` must be empty. If not, stop and ask the user to commit or stash. A soft reset would otherwise sweep unrelated edits into the landing commit.
 
-3. **Find the trunk.** Strip `--grouped` out of `$ARGUMENTS` first — it's the multi-commit shortcut, not a branch name. What remains is the trunk name if given, else `main`, else `master` (`git rev-parse --verify <name>`).
+3. **Find the trunk.** Strip `--grouped` out of `$ARGUMENTS` first — it's the multi-commit shortcut, not a branch name. What remains is the trunk name if given (verify it yourself with `git rev-parse --verify <name>` — the snapshot only covers the default case), else the snapshot's `default-trunk`.
 
-4. **Find the base.** `git merge-base <trunk> HEAD`. Then `git log --oneline <base>..HEAD` — if empty, report "nothing to land" and exit.
+4. **Find the base.** For the snapshot's default trunk, its `merge-base` and `commits base..HEAD` already answer this. For a custom trunk from step 3, run `git merge-base <trunk> HEAD` and `git log --oneline <base>..HEAD` yourself. Either way, an empty commit list means "nothing to land" — report that and exit.
 
-5. **Has the trunk moved?** Compare `git rev-parse <trunk>` with `<base>`. If they differ, the trunk advanced and `--ff-only` will fail. The plan then gains a `git rebase <trunk>` between the squash and the merge — one commit to replay, but say plainly that a conflict there needs the user's hands. Never substitute a merge commit for the rebase without saying so.
+5. **Has the trunk moved?** For the default trunk, the snapshot's `trunk-moved` already answers this. For a custom trunk, compare `git rev-parse <trunk>` with `<base>` yourself. If they differ, the trunk advanced and `--ff-only` will fail. The plan then gains a `git rebase <trunk>` between the squash and the merge — one commit to replay, but say plainly that a conflict there needs the user's hands. Never substitute a merge commit for the rebase without saying so.
 
 6. **Read the history for the message.** `git log <base>..HEAD` with full bodies. This is the part that must not be lost: why this approach, why an alternative was rejected, what the user said. Drop only the mechanics — not just `wip` or a typo fix, but any commit whose whole job is correcting or completing an earlier commit's own subject, however cleanly that correction itself is written: a bug review found and its atomic fix, an attempt and the commit that reverts it. None of these earns a line, even a summarized one; the message describes the approach that survived, not the road to it. If the branch has a `gi/` canvas or the current session holds reasoning that never reached a commit body, pull it in here — the tag preserves the old bodies, but only this commit is read on the trunk.
 

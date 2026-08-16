@@ -2,7 +2,7 @@
 name: land-branch
 description: Land a finished branch on the trunk as a coherent, reviewed sequence of commits — read the branch's own history, fold any commit that only corrects or completes an earlier one's subject (a review-found bug and its fix, a typo, a reverted attempt) into whatever it corrects, archive the original history in a tag, keep `todo/` and `gi/` out of the trunk, then merge. Usually lands as one squashed commit; lands as a few commits by subject instead when the branch genuinely bundles more than one (fast-forwarded onto the trunk one after another) — pass `--grouped` to skip straight there. Use when the user says "land the branch", "land this", "merge to main", "finish this branch", or "squash and merge".
 argument-hint: [--grouped] [trunk branch, if not main/master]
-allowed-tools: Bash(git *), Write
+allowed-tools: Bash(git *), Read, Write, Edit
 ---
 
 A working branch carries rollback points: a bug review found and the atomic commit that fixed it, an attempt and the commit that reverts it, a typo caught two commits later. These are not sloppy — an agent-authored fix is usually just as clean and atomic as the commit it corrects. What makes a commit a rollback point is its subject, not its tone: it exists only to correct or complete something an earlier commit in the same branch already claimed. The moment the branch lands none of that may survive — not as its own commit, not as a line in a message. A later agent reading `git log` on the trunk should find the coherent story the branch tells, not the back-and-forth it took to arrive there.
@@ -59,13 +59,29 @@ Steps 1–8 only read. Nothing is changed until the user confirms.
 
    **No run status in the body.** Lines like `235 tests passed`, `all checks green`, `verified with nutest` do not belong in the commit message. They were true at one moment on one tree; on the trunk they are unverifiable and often already false. Report them in the chat reply, where the user reads them while they still mean something. The body carries *why*, not *it worked*.
 
+   **No hash of a commit inside `base..HEAD` either.** The commit you are writing is the only address those changes will have on the trunk; every hash in the branch's own bodies names a commit the landing is about to rewrite. When a body you are folding cites one, the citation goes with the rest of the correction. A message is worse than a file here: a file can be repointed afterwards, a body cannot without rewriting the trunk — so this is the only moment. The exception is a message whose subject *is* the rewrite; then name `archive/<branch>` beside the hash, so the reader has something that resolves.
+
 7. **Find the working material.** `git diff --name-status <base>..HEAD -- todo/ gi/`. Keep the status letters; they decide what the working tree looks like afterwards (step 11).
+
+   7a. **Find the branch's own commits cited inside the tree.** A changelog line, a design doc, a code comment may quote a commit hash. The landing rewrites those commits, so each such hash keeps resolving — the archive tag holds the object — while no longer being an ancestor of the trunk, which is what a reader following it, and any doc check, actually tests. Find them on the added lines of the branch's own diff:
+
+   ```sh
+   git diff <base>..HEAD | grep '^+' | grep -v '^+++' | grep -oE '\b[0-9a-f]{7,40}\b' | sort -u |
+   while read -r h; do
+     [ "$(git cat-file -t "$h" 2>/dev/null)" = commit ] || continue
+     git merge-base --is-ancestor "$h" HEAD 2>/dev/null || continue
+     git merge-base --is-ancestor "$h" <base> 2>/dev/null && continue
+     echo "$h"
+   done
+   ```
+
+   The two `--is-ancestor` tests are the filter: reachable from `HEAD`, not reachable from `<base>`, so only the commits this landing rewrites come out. A hash naming an older trunk commit, or one from another repo, fails a test and is left alone. Only added lines are scanned — a line already on the trunk cannot cite a commit this branch made. `git grep -n <hash>` then names the file and line citing each hit, which is what step 8 has to show.
 
 8. **Judgement, then STOP.** Two calls to make first:
    - Already one clean commit with a good body? Then there is nothing to rewrite — skip straight to the merge (step 13). No `reset --soft`, no new commit, no `Archive:` trailer, and **no archive tag**.
    - Otherwise, read the history from step 6 as a story, not a diff. The test for a chapter is subject, not tone: a commit that only corrects or completes an earlier commit's own subject — a bug review found and its atomic fix, an attempt and its revert, a typo caught later — is never its own chapter, however cleanly it is written itself; it folds into whichever commit it corrects and leaves no trace in any message (see *Folding corrections*, at the end of this file). A commit that opens a subject of its own — a second feature the user asked for on the same branch, say — is a chapter in its own right; two such subjects never fold together just because they share a branch. What is left after folding is the branch's real chapter count: usually one, occasionally a genuine few when the branch bundles more than one subject. Build exactly that many commits — never split further just because a correction happened along the way, never merge two subjects into one just because they happen to share a file (*Splitting a shared file*, at the end of this file, decides that case). Say so plainly whenever the count comes out above one, whether or not `--grouped` was passed — the shape is the branch's own; `--grouped` only lets the user skip straight to it.
 
-   Show the user, in one block: the chapters found and which original commits fold into each, the generated message(s), the `todo/`/`gi/` paths being dropped, an `archive/<branch>` overwrite warning if `git tag -l` finds one, the rebase warning from step 5, the exact merge command, and the branch-delete command from step 13a. **Wait for confirmation.**
+   Show the user, in one block: the chapters found and which original commits fold into each, the generated message(s), the `todo/`/`gi/` paths being dropped, each hash from step 7a with the file citing it and whether it is dropped or repointed (step 11a), an `archive/<branch>` overwrite warning if `git tag -l` finds one, the rebase warning from step 5, the exact merge command, and the branch-delete command from step 13a. **Wait for confirmation.**
 
 ## Landing
 
@@ -84,7 +100,13 @@ Steps 1–8 only read. Nothing is changed until the user confirms.
 
     Then check `git diff --cached --quiet`: if nothing is staged any more, the branch held *only* working material. Report that and stop — there is nothing to land.
 
-12. **Commit** with the message from step 6, plus an `Archive: archive/<branch>` trailer.
+    11a. **Settle the cited hashes** from step 7a, in the working tree, then `git add` each file you touched.
+
+    A commit cannot carry its own hash — writing it in changes it. On the squash path every cited commit folds into the one commit being written, so there is nothing to repoint: **drop the citation**. Drop the whole `(…)` group when every hash in it folds here, or just that hash when the group also names commits from before `<base>`. Nothing is lost — the entry and the change it describes now land together, so `git blame <file>` names the commit in one step. This is also what survives step 5's rebase, which changes every landed hash a second time; a citation kept by any other means would break again there.
+
+    Skip a hash whose file was dropped at step 11 — that file is not landing.
+
+12. **Commit** with the message from step 6, plus an `Archive: archive/<branch>` trailer. Run the drafted message through step 7a's loop first, with the message text in place of the diff — a hash reaching the body is usually one copied out of a folded commit, and after the commit exists there is no fixing it.
 
 13. **Merge.** `git switch <trunk>` then `git merge --ff-only <branch>`. With the rebase from step 5 if the trunk moved.
 
@@ -98,7 +120,7 @@ Step 8's own analysis is what decides a branch needs more than one commit — no
 
 The trade-off is the same either way, and the user takes it on by confirming the plan: the chapter commits reach the trunk as ordinary commits, one after another, with no merge commit around them. A multi-subject branch is an accident of workflow, not a unit — a merge commit would record that accident, and its body would have to describe several subjects at once. Landing plain keeps the history one shape: linear, exactly like the squash path. The cost: each chapter's body must be self-sufficient, because no other place survives to carry its reasoning.
 
-Steps 1–7 and 9 run unchanged. The archive tag still matters: `reset --soft` makes the original commits unreachable here too.
+Steps 1–7a and 9 run unchanged. The archive tag still matters: `reset --soft` makes the original commits unreachable here too.
 
 ### Folding corrections, grouping by subject
 
@@ -124,6 +146,7 @@ Name every split file in the step 8 plan, with the mechanism used. An intermedia
 - `git reset --soft <base>` — the whole branch is staged, as in step 10.
 - `git restore --staged .` — unstage all of it. The working tree is untouched.
 - Per chapter: `git add <the chapter's paths>` — a split file is staged by its mechanism from *Splitting a shared file* instead — then `git commit` with that chapter's message. The last chapter's body also carries the `Archive: archive/<branch>` trailer; one pointer is enough.
+- Step 11a runs per chapter, just before that chapter's commit, and gains one case: a hash folding into a chapter **already committed** can be repointed at its real new hash, since that hash now exists — unless step 5 found the trunk moved, because the rebase then changes that hash again and the citation breaks a second time; drop it instead. A hash folding into the chapter being written, or into a later one, is dropped as on the squash path — the first cannot name itself, the second does not exist yet, and reaching back to fix it later would rewrite the chapter that cites it.
 - `todo/` and `gi/` are never added, so step 11's `git restore --staged` has nothing to do and disappears — the same result reached by doing nothing. What they leave behind in the working tree, and your duty to report it instead of claiming a clean tree, is exactly as step 11 describes.
 - If every chapter comes out empty, the branch held only working material. Report that and stop, as step 11 says.
 

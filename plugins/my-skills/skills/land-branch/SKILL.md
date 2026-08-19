@@ -1,6 +1,6 @@
 ---
 name: land-branch
-description: Land a finished branch on the trunk as a coherent, reviewed sequence of commits — read the branch's own history, fold any commit that only corrects or completes an earlier one's subject (a review-found bug and its fix, a typo, a reverted attempt) into whatever it corrects, archive the original history in a tag, keep `todo/` and `gi/` out of the trunk, then merge. Usually lands as one squashed commit; lands as a few commits by subject instead when the branch genuinely bundles more than one (fast-forwarded onto the trunk one after another) — pass `--grouped` to skip straight there. Use when the user says "land the branch", "land this", "merge to main", "finish this branch", or "squash and merge".
+description: Land a finished branch on the trunk as a coherent, reviewed sequence of commits — read the branch's own history, fold any commit that only corrects or completes an earlier one's subject (a review-found bug and its fix, a typo, a reverted attempt) into whatever it corrects, archive the original history in a tag, keep `todo/` and `gi/` out of the trunk unless the repo's own CLAUDE.md says it is never published, then merge. Usually lands as one squashed commit; lands as a few commits by subject instead when the branch genuinely bundles more than one (fast-forwarded onto the trunk one after another) — pass `--grouped` to skip straight there. Use when the user says "land the branch", "land this", "merge to main", "finish this branch", or "squash and merge".
 argument-hint: [--grouped] [trunk branch, if not main/master]
 allowed-tools: Bash(git *), Read, Write, Edit
 ---
@@ -62,6 +62,8 @@ Steps 1–8 only read. Nothing is changed until the user confirms.
    **No hash of a commit inside `base..HEAD` either.** The commit you are writing is the only address those changes will have on the trunk; every hash in the branch's own bodies names a commit the landing is about to rewrite. When a body you are folding cites one, the citation goes with the rest of the correction. A message is worse than a file here: a file can be repointed afterwards, a body cannot without rewriting the trunk — so this is the only moment. The exception is a message whose subject *is* the rewrite; then name `archive/<branch>` beside the hash, so the reader has something that resolves.
 
 7. **Find the working material.** `git diff --name-status <base>..HEAD -- todo/ gi/`. Keep the status letters; they decide what the working tree looks like afterwards (step 11).
+
+   **First: does this repo publish them?** Read the repo's root `CLAUDE.md`. If it says the repo is a monorepo, personal, internal, or never sent upstream, then `todo/` and `gi/` are ordinary content there — they land with everything else, and steps 7, 11 and 11a have nothing to do. Say so once in the step 8 block instead of listing paths to drop. Only when nothing says it is the repo published, which is the default this step assumes.
 
    7a. **Find the branch's own commits cited inside the tree.** A changelog line, a design doc, a code comment may quote a commit hash. The landing rewrites those commits, so each such hash keeps resolving — the archive tag holds the object — while no longer being an ancestor of the trunk, which is what a reader following it, and any doc check, actually tests. Find them on the added lines of the branch's own diff:
 

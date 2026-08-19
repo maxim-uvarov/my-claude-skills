@@ -69,7 +69,7 @@ An index note with a mix of verdicts stays in `todo/`. Strike its confirmed item
 
 Leave STILL BROKEN and UNVERIFIABLE notes where they are. You may append a dated line with what you ran and what happened. Do not rewrite their reasoning; it is the user's record, not a draft.
 
-Leave the folder as the repo keeps it. A published repo keeps `todo/` uncommitted, so commit nothing; an internal monorepo tracks it like any other file, so the moves and the appended lines are committed with the rest. Two signs mark the monorepo: `mono` in the path, and the repo's own root `CLAUDE.md` saying so — the `CLAUDE.md` decides.
+Leave the folder as the repo keeps it. A published repo keeps `todo/` uncommitted, so commit nothing; a repo that is never published tracks it like any other file, so the moves and the appended lines are committed with the rest. Two signs mark such a repo: `mono` in the path, and the repo's own root `CLAUDE.md` saying it is internal, personal, or never sent upstream — the `CLAUDE.md` decides, and the monorepo is only its commonest case.
 
 ## Report format
 

@@ -97,12 +97,12 @@ plot '/tmp/plot.dat' using (bin($1)):(1.0) smooth freq with boxes notitle
 
 ## Gotchas
 
-| Problem | Fix |
-|---|---|
-| Header row plotted as a data point | `to tsv --noheaders` (not plain `to tsv`) |
-| `(` / `)` errors in the script | Don't use `$"..."` interpolation — keep the script a plain `"..."` string so `xtic(1)`, `bin($1)` pass through literally |
-| Categorical x labels (months, names) | `using 2:xtic(1)` (bars) or `using 0:2:xtic(1)` (lines) — column 1 supplies tic labels |
-| `$1`, `$2` (gnuplot column refs) | Pass through literally in a plain `"..."` string — Nushell only interpolates in `$"..."`. Keep the script plain and write `$1` as-is |
-| Nulls / non-numeric y values | Filter in Nushell first (`where ($it.y | describe) == int`, or `compact`) before writing the file |
-| Plot too wide/narrow for terminal | Tune `set terminal dumb size W,H` (W ≈ 70–100, H ≈ 18–30) |
-| Legend overlapping the curve | `set key outside` or `set key off` |
+- **Header row plotted as a data point** — write the file with `to tsv --noheaders`, not plain `to tsv`.
+- **`(` / `)` errors in the script** — don't use `$"..."` interpolation.
+  Keep the script a plain `"..."` string, so `xtic(1)` and `bin($1)` pass through literally.
+- **Categorical x labels (months, names)** — `using 2:xtic(1)` for bars, `using 0:2:xtic(1)` for lines; column 1 supplies the tic labels.
+- **`$1`, `$2` (gnuplot column refs)** — they pass through literally in a plain `"..."` string, because Nushell only interpolates in `$"..."`.
+  Keep the script plain and write `$1` as-is.
+- **Nulls / non-numeric y values** — filter in Nushell first (`where ($it.y | describe) == int`, or `compact`) before writing the file.
+- **Plot too wide or narrow for the terminal** — tune `set terminal dumb size W,H` (W ≈ 70–100, H ≈ 18–30).
+- **Legend overlapping the curve** — `set key outside`, or `set key off`.

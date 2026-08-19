@@ -11,14 +11,17 @@ version: 0.1.0
 
 # Plot Nushell tables with gnuplot (ASCII)
 
-Turn a Nushell table into a text chart drawn in the terminal. Output is gnuplot's `dumb`
-terminal — characters, no image file. Good for eyeballing data and iterating in the loop.
+Turn a Nushell table into a text chart drawn in the terminal.
+Output is gnuplot's `dumb` terminal — characters, no image file.
+Good for eyeballing data and iterating in the loop.
 
-Requires `gnuplot` on PATH (`gnuplot --version`). If missing, install it (`brew install gnuplot`).
+Requires `gnuplot` on PATH (`gnuplot --version`).
+If missing, install it (`brew install gnuplot`).
 
 ## The mechanism
 
-Four steps. **Always go through a temp data file** — do not inline data with `'-'`/`e`.
+Four steps.
+**Always go through a temp data file** — do not inline data with `'-'`/`e`.
 
 1. Get the data into a Nushell table with numeric y-column(s).
 2. Write it as headerless TSV to a temp file:
@@ -36,20 +39,16 @@ plot '/tmp/plot.dat' using 1:2 with linespoints title 'y'
 " | gnuplot | complete | get stdout
 ```
 
-**Why a temp file, not inline `'-'` data:** the data block stays out of the script string, so
-there is nothing to escape, and the same file can be referenced multiple times for multi-series
-plots. Inline data forces `$"..."` interpolation (which then needs `\(` `\)` escaping for
-`xtic(1)` etc.) and forces you to repeat the whole data block once per plotted series.
+**Why a temp file, not inline `'-'` data:** the data block stays out of the script string, so there is nothing to escape, and the same file can be referenced multiple times for multi-series plots.
+Inline data forces `$"..."` interpolation (which then needs `\(` `\)` escaping for `xtic(1)` etc.) and forces you to repeat the whole data block once per plotted series.
 
 ## Recipes
 
-A worked gallery of 17+ chart types with real rendered output — bars (clustered/stacked),
-histogram, impulses, steps, filled curves, error bars, candlesticks, smoothing, log axes,
-time series, multiplot, functions, and nu-pipeline→chart examples — is in
-[references/gallery.md](references/gallery.md). The essentials:
+A worked gallery of 17+ chart types with real rendered output — bars (clustered/stacked), histogram, impulses, steps, filled curves, error bars, candlesticks, smoothing, log axes, time series, multiplot, functions, and nu-pipeline→chart examples — is in [references/gallery.md](references/gallery.md).
+The essentials:
 
-All read `/tmp/plot.dat` written as in step 2. Column numbers in `using` are **1-based**;
-`using 0:N` uses the row index (pseudo-column 0) as x — used for categorical x-axes.
+All read `/tmp/plot.dat` written as in step 2.
+Column numbers in `using` are **1-based**; `using 0:N` uses the row index (pseudo-column 0) as x — used for categorical x-axes.
 
 ### Line / linespoints
 ```nushell
@@ -59,7 +58,8 @@ plot '/tmp/plot.dat' using 1:2 with lines title 'y'
 ```
 
 ### Multiple series (shared x, columns 2 and 3)
-`''` reuses the previously named file. `set key outside` keeps the legend off the plot.
+`''` reuses the previously named file.
+`set key outside` keeps the legend off the plot.
 ```nushell
 "set terminal dumb size 72,18
 set key outside

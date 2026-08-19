@@ -47,18 +47,22 @@ Report three.
 
 ## Four classes
 
-**1. Direct contradiction.** Both rules apply to the same prompt and cannot both be obeyed.
+**1. Direct contradiction.**
+Both rules apply to the same prompt and cannot both be obeyed.
 
-**2. Duplicate that drifted.** The same rule written in two places, one of them updated later.
+**2. Duplicate that drifted.**
+The same rule written in two places, one of them updated later.
 This is the worst class and the hardest to see, because neither copy looks wrong on its own and both look authoritative.
 It is also the one that regenerates: fixing both copies leaves two copies, which drift again.
 
-**3. Precedence collision.** Both rules are stated as absolutes, they come from different sources, and neither carries an exception clause naming the other.
+**3. Precedence collision.**
+Both rules are stated as absolutes, they come from different sources, and neither carries an exception clause naming the other.
 A real one, verified in this repo: a session-level harness instruction says "Do not call the AgentTool unless the user requested it", while `decision-provenance/SKILL.md:101` and `code-archaeology/SKILL.md:109` both instruct the agent to run the work in subagents.
 Splitting prompt: `/decision-provenance why is this flag here`.
 Neither text mentions the other, so the agent picks — and which way it picks is invisible to the user, who sees either a slow single-threaded run or a violated instruction, and has no reason to connect either to a skill file.
 
-**4. Stale pointer.** No contradiction in the text; the rule names a path, command, flag, directory or convention that no longer exists.
+**4. Stale pointer.**
+No contradiction in the text; the rule names a path, command, flag, directory or convention that no longer exists.
 Mechanically checkable, so check it rather than reading for it.
 
 ### Not conflicts
@@ -66,10 +70,16 @@ Mechanically checkable, so check it rather than reading for it.
 Do not report these.
 Each of them looks like a contradiction and is not, and reporting them is how the audit loses the user's trust:
 
-- **A rule with its own exception.** The global rule "never merge on your own initiative" sits three lines above "an explicit request is the exception", and `land-branch` is that request. Read the whole section before pairing anything from it.
-- **Scope-separated rules.** "Never let `todo/` reach a published repo" and "version-control everything, notes included" contradict each other only if you drop the words "published" and "internal monorepo".
-- **Different granularity.** A general rule and a specific procedure for one case are a hierarchy, not a fight.
-- **A rule nobody follows.** That is adherence, a different problem with a different fix. Note it in one line if it is in front of you; do not open a finding.
+- **A rule with its own exception.**
+  The global rule "never merge on your own initiative" sits three lines above "an explicit request is the exception", and `land-branch` is that request.
+  Read the whole section before pairing anything from it.
+- **Scope-separated rules.**
+  "Never let `todo/` reach a published repo" and "version-control everything, notes included" contradict each other only if you drop the words "published" and "internal monorepo".
+- **Different granularity.**
+  A general rule and a specific procedure for one case are a hierarchy, not a fight.
+- **A rule nobody follows.**
+  That is adherence, a different problem with a different fix.
+  Note it in one line if it is in front of you; do not open a finding.
 
 ## Method
 
@@ -116,7 +126,8 @@ The system prompt is a source like any other, and it is the one the user cannot 
 It changes with the surface, the model, and the permission mode, and every change of it is a change of the rule set nobody reviewed.
 So pair it against the global file deliberately rather than waiting for a conflict to surface — that is where the highest-frequency findings live, because a harness rule applies to every prompt.
 It also contradicts *itself* often enough to be worth a pass on its own: an appended mode preamble does not know what the base prompt already said.
-Resolution never lands on the harness side. It lands on the file you can edit, or on a setting, and the finding says which.
+Resolution never lands on the harness side.
+It lands on the file you can edit, or on a setting, and the finding says which.
 
 ### 2. Mechanical pass first
 
@@ -148,12 +159,22 @@ Then look for an exception clause in either source before opening the finding �
 The report is not the deliverable.
 A resolved conflict is.
 
-- **One authority per rule.** Delete the copy; never sync two copies. Two copies of a rule drift again by definition — that is what class 2 is. The same principle the fail-fast rule states for code: do not enforce one invariant in two places.
-- **Put the rule at the narrowest layer where it is true.** A rule in the global file that only holds for Nushell repos belongs in a Nushell repo. Rules pushed up a level to be safe are what fills the global file with things that then contradict specific projects.
-- **If it must never happen, prose cannot hold it.** Move it to a `PreToolUse` hook or a permission deny rule and delete the sentence, or keep the sentence and accept it as guidance. Keeping both is the same defect one layer up.
+- **One authority per rule.**
+  Delete the copy; never sync two copies.
+  Two copies of a rule drift again by definition — that is what class 2 is.
+  The same principle the fail-fast rule states for code: do not enforce one invariant in two places.
+- **Put the rule at the narrowest layer where it is true.**
+  A rule in the global file that only holds for Nushell repos belongs in a Nushell repo.
+  Rules pushed up a level to be safe are what fills the global file with things that then contradict specific projects.
+- **If it must never happen, prose cannot hold it.**
+  Move it to a `PreToolUse` hook or a permission deny rule and delete the sentence, or keep the sentence and accept it as guidance.
+  Keeping both is the same defect one layer up.
 - **`claudeMdExcludes`** is the right tool when the conflict comes from another team's file in a monorepo, rather than editing their file.
-- **Never rewrite the user's instruction files silently.** They carry his reasoning in his own voice, and an agent tidying prose reliably keeps the rule and deletes the why. Propose the exact edit as a diff, take one confirmation, then apply it.
-- **Record the resolution where it survives** — the commit body, with the date and what the two rules were. Otherwise the next agent reads the surviving rule, finds it arbitrary, and re-opens the question you just closed.
+- **Never rewrite the user's instruction files silently.**
+  They carry his reasoning in his own voice, and an agent tidying prose reliably keeps the rule and deletes the why.
+  Propose the exact edit as a diff, take one confirmation, then apply it.
+- **Record the resolution where it survives** — the commit body, with the date and what the two rules were.
+  Otherwise the next agent reads the surviving rule, finds it arbitrary, and re-opens the question you just closed.
 
 ## Output
 
@@ -175,12 +196,23 @@ A paraphrase of a rule is a new rule, and the user cannot check a paraphrase aga
 
 - After any session in which an agent edited an instruction file — that is the drift this skill exists for.
 - Before adding a new rule: the same rule may already exist elsewhere, in different words, and adding the second copy is how class 2 is born.
-- When an agent "ignored" an instruction. It usually obeyed a different one. Finding which is faster than rewriting the rule that was already fine.
+- When an agent "ignored" an instruction.
+  It usually obeyed a different one.
+  Finding which is faster than rewriting the rule that was already fine.
 
 ## Traps
 
-- **This audit is itself a prime source of drift.** You are editing the files that govern every future session, on the strength of your own reading of them. Edit surgically, one conflict per change, and let the user confirm each.
-- **A skill body and a skill description behave differently.** Descriptions sit in context every session, so two descriptions claiming the same trigger phrase collide on every prompt. Bodies load on demand and two of them rarely meet, so a conflict between two skill bodies is real but rare — rank it accordingly.
-- **The harness system prompt is not a file.** You can quote it from your own context, but you cannot diff it, and it changes with the session, the model and the surface. Label such a quote as observed in this session and never propose an edit to it — propose the edit to the file on the other side of the pair.
-- **A found conflict is not proof the rule was ever broken.** If the user wants to know whether it actually cost him something, that is `decision-provenance` and the session transcripts, not this skill.
-- **Absence is a finding only with its scope.** "No conflicts" means nothing without the list of sources you enumerated and the topics you grouped. Print both.
+- **This audit is itself a prime source of drift.**
+  You are editing the files that govern every future session, on the strength of your own reading of them.
+  Edit surgically, one conflict per change, and let the user confirm each.
+- **A skill body and a skill description behave differently.**
+  Descriptions sit in context every session, so two descriptions claiming the same trigger phrase collide on every prompt.
+  Bodies load on demand and two of them rarely meet, so a conflict between two skill bodies is real but rare — rank it accordingly.
+- **The harness system prompt is not a file.**
+  You can quote it from your own context, but you cannot diff it, and it changes with the session, the model and the surface.
+  Label such a quote as observed in this session and never propose an edit to it — propose the edit to the file on the other side of the pair.
+- **A found conflict is not proof the rule was ever broken.**
+  If the user wants to know whether it actually cost him something, that is `decision-provenance` and the session transcripts, not this skill.
+- **Absence is a finding only with its scope.**
+  "No conflicts" means nothing without the list of sources you enumerated and the topics you grouped.
+  Print both.

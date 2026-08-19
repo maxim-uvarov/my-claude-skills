@@ -1,6 +1,8 @@
 # Vendored skills
 
-Skills copied verbatim from other repos. Nothing here is edited locally — a local change would be silently overwritten on the next refresh, and would make the upstream diff meaningless. To update one, re-copy it from its source and bump the commit below.
+Skills copied verbatim from other repos.
+Nothing here is edited locally — a local change would be silently overwritten on the next refresh, and would make the upstream diff meaningless.
+To update one, re-copy it from its source and bump the commit below.
 
 | skill | source | taken at | license |
 | --- | --- | --- | --- |

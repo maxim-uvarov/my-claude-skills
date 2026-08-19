@@ -42,7 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Change Categories
 
-Exactly six categories are defined. Use only those that have entries — omit empty categories:
+Exactly six categories are defined.
+Use only those that have entries — omit empty categories:
 
 | Category       | Purpose                                  |
 |----------------|------------------------------------------|
@@ -53,7 +54,8 @@ Exactly six categories are defined. Use only those that have entries — omit em
 | `### Fixed`    | Bug fixes                                |
 | `### Security` | Vulnerability fixes                      |
 
-**Ordering within a version**: Categories appear in the order listed above (Added first, Security last). Only include categories that have entries.
+**Ordering within a version**: Categories appear in the order listed above (Added first, Security last).
+Only include categories that have entries.
 
 ## Version Header Format
 

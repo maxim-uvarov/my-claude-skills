@@ -1,6 +1,6 @@
 ---
 name: land-branch
-description: Land a finished branch on the trunk as a coherent, reviewed sequence of commits — read the branch's own history, fold any commit that only corrects or completes an earlier one's subject (a review-found bug and its fix, a typo, a reverted attempt) into whatever it corrects, archive the original history in a tag, keep `todo/` and `gi/` out of the trunk unless the repo's own CLAUDE.md says it is never published, then merge. Usually lands as one squashed commit; lands as a few commits by subject instead when the branch genuinely bundles more than one (fast-forwarded onto the trunk one after another) — pass `--grouped` to skip straight there. Use when the user says "land the branch", "land this", "merge to main", "finish this branch", or "squash and merge".
+description: Land a finished branch on the trunk as a coherent, reviewed sequence of commits — read the branch's own history, fold any commit that only corrects or completes an earlier one's subject (a review-found bug and its fix, a typo, a reverted attempt) into whatever it corrects, archive the original history in a tag, keep `todo/` and `gi/` out of the trunk unless the repo's own CLAUDE.md says it is never published, then merge. Usually lands as one squashed commit; lands as a few commits by subject instead when the branch genuinely bundles more than one (fast-forwarded onto the trunk one after another) — pass `--grouped` to skip straight there. Detects work the trunk already holds under different hashes, and re-bases the branches that were built on this one. Use when the user says "land the branch", "land this", "merge to main", "finish this branch", or "squash and merge".
 argument-hint: [--grouped] [trunk branch, if not main/master]
 allowed-tools: Bash(git *), Read, Write, Edit
 ---
@@ -84,6 +84,30 @@ Nothing is changed until the user confirms.
    The plan then gains a `git rebase <trunk>` between the squash and the merge — one commit to replay, but say plainly that a conflict there needs the user's hands.
    Never substitute a merge commit for the rebase without saying so.
 
+   5a. **Does the trunk already hold part of this branch?** — only when step 5 said the trunk moved.
+   A branch that sat while a sibling landed carries commits whose work is on the trunk already, under different hashes.
+   `git log --cherry-mark` will not find them: what this skill writes is a squash, so nothing shares a patch-id with it — the skill's own output defeats the only duplicate check git offers.
+   The trunk is then ahead in topology while the branch is behind in content, and step 13's plain `rebase <trunk>` stages a reversal of the trunk's newer work.
+
+   Find the **content fork-point** instead: the newest commit on the branch whose every file touched since `<base>` already has the same blob on the trunk.
+
+   ```sh
+   for c in $(git rev-list <base>..HEAD); do          # newest first
+     files=$(git diff --name-only <base> "$c")        # everything the branch touched up to c
+     [ -z "$files" ] && continue
+     git diff --quiet <trunk> "$c" -- $files && { echo "content fork-point: $c"; break; }
+   done
+   ```
+
+   That file list is cumulative on purpose, and narrowing it to the files `c` itself touched breaks the step.
+   When the trunk holds a later commit's work but not an earlier one's — a cherry-picked hotfix, a partial landing — the narrow test names the later commit as the fork-point, and `rebase --onto` then deletes the earlier one with nothing on screen to show for it.
+
+   Nothing printed means the whole branch is new — carry on with `<base>` unchanged.
+   A commit printed means everything up to and including it is already on the trunk: **that commit is the real base**, every step from 6 on uses it in place of `<base>`, and the replay is `git rebase --onto <trunk> <real base> <branch>` — never the plain `rebase <trunk>` from step 5.
+
+   Show the evidence in the step 8 plan: how many commits fall away, the trunk commit that landed them — find it by subject in `git log <base>..<trunk>` — and the blob comparison that proves the trees agree.
+   Dropping commits is the one thing here the user cannot check by reading a diff, so it is stated, never assumed.
+
 6. **Read the history for the message.**
    `git log <base>..HEAD` with full bodies.
    This is the part that must not be lost: why this approach, why an alternative was rejected, what the user said.
@@ -145,7 +169,7 @@ Nothing is changed until the user confirms.
      Build exactly that many commits — never split further just because a correction happened along the way, never merge two subjects into one just because they happen to share a file (*Splitting a shared file*, at the end of this file, decides that case).
      Say so plainly whenever the count comes out above one, whether or not `--grouped` was passed — the shape is the branch's own; `--grouped` only lets the user skip straight to it.
 
-   Show the user, in one block: the chapters found and which original commits fold into each, the generated message(s), the `todo/`/`gi/` paths being dropped, each hash from step 7a with the file citing it and whether it is dropped or repointed (step 11a), an `archive/<branch>` overwrite warning if `git tag -l` finds one, the rebase warning from step 5, the exact merge command, and the branch-delete command from step 13a.
+   Show the user, in one block: the chapters found and which original commits fold into each, the generated message(s), the `todo/`/`gi/` paths being dropped, each hash from step 7a with the file citing it and whether it is dropped or repointed (step 11a), an `archive/<branch>` overwrite warning if `git tag -l` finds one, the rebase warning from step 5, the content fork-point from step 5a with its evidence if one was found, any branch step 13b will offer to re-base, the exact merge command, and the branch-delete command from step 13a.
    **Wait for confirmation.**
 
 ## Landing
@@ -201,9 +225,26 @@ Nothing is changed until the user confirms.
     On the squash path, `git reset --soft` produced a new commit object that differs from the branch tip, so git won't recognize it as merged: use `git branch -D <branch>`.
     When step 8 sent you straight to the merge (already one clean commit, no squash, no tag), the branch tip *is* the trunk tip now, so the plain `git branch -d <branch>` works.
 
+    13b. **Re-base the branches built on this one.**
+    They are long-routed now: their history holds commits the trunk no longer has, so a later merge or rebase there re-applies or conflicts with work that is already in.
+    Find them with the tag from step 9, which is the old branch tip itself — use the trunk tip instead when step 8 skipped the squash:
+
+    ```sh
+    git branch --format='%(refname:short)' | while read -r b; do
+      [ "$b" = "<trunk>" ] && continue                # contains itself on the no-squash path
+      git merge-base --is-ancestor archive/<branch> "$b" 2>/dev/null && echo "$b"
+    done
+    ```
+
+    For each one: run step 5a's fork-point against the new trunk, tag the tip (`git tag archive/<other>-prerebase <other>` — a rebase orphans the originals exactly as `reset --soft` does), then `git rebase --onto <trunk> <its fork-point> <other>`.
+    The branch keeps its own commits and loses the duplicated ones.
+    **Ask before running it**: this rewrites work the user did not name, and `git worktree list` may show one of these branches checked out elsewhere, where a rebase moves that worktree's files under whoever is working in it.
+    The test catches a branch that contains the whole landed branch; one forked from its middle is caught by step 5a when its own turn comes.
+
 14. **Report**, briefly: the trunk's new commit, that the user is now standing on `<trunk>` (say it plainly — the next edit would otherwise land there), that `<branch>` was deleted, and — if step 9 ran — that `git log archive/<branch>` still holds the full history.
     Split the leftover working-tree state from step 11 into notes still open and artifacts this branch completed; for the completed ones give the `rm` command (`allowed-tools` here is git only, so the user runs it).
     This is also where run status belongs — `nutest run` → `57 passed`, not in the commit body.
+    Name every branch step 13b re-based, with its `archive/<other>-prerebase` tag, and every one you offered and the user declined — a branch left long-routed is the next session's conflict.
     Do not push.
 
 ## Landing as more than one commit
@@ -270,6 +311,7 @@ An intermediate commit holding part of a file may not build — the ordered-hist
 Step 13 runs as written: `git switch <trunk>`, then `git merge --ff-only <branch>` — with the step 5 rebase first if the trunk moved (several commits to replay now, and a conflict there still needs the user's hands).
 
 13a: `reset --soft` rebuilt the chapters, but the ff-merge just put that rebuilt tip on the trunk itself, so the plain `git branch -d <branch>` works.
+13b runs as written too — a branch built on this one is long-routed however many commits landed.
 
 ## Related
 

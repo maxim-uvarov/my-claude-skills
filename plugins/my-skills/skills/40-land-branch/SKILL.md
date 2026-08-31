@@ -1,5 +1,5 @@
 ---
-name: land-branch
+name: 40-land-branch
 description: Land a finished branch on the trunk as a coherent commit — fold the rollback commits into the work they correct, carry the branch's reasoning into the message, archive the old history in a tag, keep `todo/` and `gi/` off the trunk, then merge. Use when the user says "land the branch", "land this", "merge to main", "finish this branch", or "squash and merge".
 argument-hint: [--grouped] [trunk branch, if not main/master]
 allowed-tools: Bash(git *), Read, Write, Edit
@@ -22,7 +22,7 @@ Then no tag is written.
 
 The global rule is that the agent never merges on its own initiative, because a merge touches the trunk.
 **This skill is the named exception.**
-The user invoking `/land-branch` *is* the authorization — that is not inference.
+The user invoking `/40-land-branch` *is* the authorization — that is not inference.
 So do not stop one command short and hand back a merge command to paste.
 
 What the exception buys is one confirmation, not silence: show the whole plan at step 8, wait, then run it.

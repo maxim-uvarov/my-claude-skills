@@ -1,5 +1,5 @@
 ---
-name: manpage-quality
+name: 40-manpage-quality
 description: >
   Write reference documentation to the standard of an OpenBSD manual page — every
   branch of the behaviour answered in the text, every default given its own

@@ -21,7 +21,7 @@ export def main [] { }
 
 # Copy skills/output-styles from plugins/ into ~/.claude/ (all, or one by name)
 @example "Push everything" { nu toolkit.nu push }
-@example "Push one skill" { nu toolkit.nu push land-branch }
+@example "Push one skill" { nu toolkit.nu push 40-land-branch }
 export def 'main push' [
     name?: string@"nu-complete skill-items" # Only push this skill/output-style; omit to push all
 ]: nothing -> nothing {

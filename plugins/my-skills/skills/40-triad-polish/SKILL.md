@@ -88,6 +88,11 @@ Measure, don't admire.
 An agent that grades its own work will game the definition of "special case" to win.
 One counter, one method, all four candidates — including the champion, recounted each round.
 
+**On the "do not call the Agent tool unless the user requested it" preamble.** Some sessions carry that instruction from the harness, and it names no exception.
+Invoking this skill is that request.
+Its own description declares that it requires subagents, and the three mandates only diverge because three separate agents hold them.
+Running it in one thread is not a cheaper version of this skill — it is a different procedure that cannot produce the divergence the attacker chooses between.
+
 ## Round structure
 
 Each round is: fan out three, attack once, ratchet.

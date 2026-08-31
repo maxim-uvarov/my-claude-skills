@@ -9,7 +9,9 @@ description: >
   signals they are done building and want the result improved rather than extended. This skill runs
   AFTER a working solution exists; for framing a problem before the solution is written, use
   40-elegance-first instead. Do NOT use it to fix bugs, add features, or optimize speed.
-  Requires subagents.
+  It is a heavy pass — three subagents over up to three rounds — on code the user names and
+  wants reshaped; for one cleanup pass over the current diff, the built-in `simplify` is the
+  cheaper tool and the right one. Requires subagents.
 version: 0.1.0
 ---
 

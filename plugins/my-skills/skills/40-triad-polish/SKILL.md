@@ -48,6 +48,12 @@ Say which surface must not move: the CLI output, the public API, the exported na
 Write the boundary down.
 Agent F works right up against it and needs to know where it is.
 
+Comments are frozen with the code they annotate.
+An agent may drop one only when it deletes the code the comment explains, and may reword one only when the new code makes the old wording wrong.
+Without that line Agent R cuts every `# Why:` as "not required by the tests", which is true and is the wrong test.
+The adversary checks the other direction: a comment has to explain the code as it stands, for a reader who never saw this run.
+One that narrates the change — what was here before, what moved, what was tried — is history, and history belongs in the commit body; count it as a defect.
+
 ### 0.3 Build the gate
 
 - Tests exist → run them, record the pass list.
@@ -60,6 +66,10 @@ Agent F works right up against it and needs to know where it is.
 **Then measure coverage.** This is not optional, and it is the part most likely to be skipped.
 The tests define what the cutters are allowed to delete, so anything they don't reach reads as dead weight and dies.
 List the uncovered branches and mark them **untouchable**: an agent may flag one for the user's attention, but may not remove it.
+When no coverage tool is installed, do it by hand: read each test, name the branches it reaches, and everything else is uncovered.
+Say in the report that the list was made by reading.
+Pre-existing code the tests barely reach is not polished at all — mark the whole region untouchable, not its uncovered lines.
+A header renderer the tests pin at two shapes is a region where every "simplification" is either a bug fix or a surface move the gate cannot see.
 If coverage is very thin, say so — the honest options are to write more tests first or to polish a smaller unit.
 
 ### 0.4 Score and name the champion
@@ -87,6 +97,9 @@ Measure, don't admire.
 **Only the adversary scores.** Challengers return code and prose, never their own numbers.
 An agent that grades its own work will game the definition of "special case" to win.
 One counter, one method, all four candidates — including the champion, recounted each round.
+One method across rounds, too: reuse the same adversary agent for every round, so its counting method carries over.
+If that is not possible, hand the next adversary the previous method verbatim.
+Numbers from two different counters are not one series, and a report that shows "6 before, 7 after" from two counters reads as a regression that never happened.
 
 **On the "do not call the Agent tool unless the user requested it" preamble.** Some sessions carry that instruction from the harness, and it names no exception.
 Invoking this skill is that request.
@@ -105,8 +118,13 @@ Identical mandates produce identical answers; the divergence is the whole point.
 They will pull against each other — R subtracts, B sometimes adds a line to remove a thought — and that tension is what gives the attacker something to choose between.
 
 Give each agent: the code, the frozen tests, the frozen surface, the untouchable list, and one of the three mandates below.
-Each returns: full revised code, one paragraph on what it changed, and — this part is mandatory — **what it could not remove and why**.
+Each returns: one paragraph on what it changed, and — this part is mandatory — **what it could not remove and why**.
 No self-scoring.
+
+The code itself goes to disk, never into the reply: each challenger writes its candidate as a complete file in the scratchpad, and the main session gates that file as-is.
+Code returned inline arrives HTML-escaped and in fragments, and the main session ends up reassembling a file by string splicing — a second place for a candidate to break that the gate did not see.
+Challengers never run the build or the tests.
+The gate belongs to the main session, and one target dir shared by four agents thrashes; the challengers reason from the sources and say ASSUMED where they could not check.
 
 **Agent R — Remove.**
 > Your only tool is subtraction.
@@ -137,9 +155,12 @@ No self-scoring.
 
 ### Attack
 
-Spawn **one** adversary.
+Spawn **one** adversary in round 1 and keep it for every later round: send it the new candidates with SendMessage instead of spawning again, so its counting method carries over.
 Give it the champion and the three challengers **blinded** — label them A, B, C, D in random order, do not say which is the incumbent, do not say which agent wrote which.
 An unblinded reviewer defends the status quo or rewards novelty; both are noise.
+The brief the adversary reads must not name the champion's internal functions or types either: a brief that lists `render_const` and `const_name` as the unit tells the adversary which candidate is the incumbent by grep.
+Describe the unit by role — the walk, the renderer, the flag block — in the adversary's copy.
+The frozen surface stays in the brief as written, exported names included: the adversary cannot see a surface move without them.
 
 Its instructions:
 > For each candidate, first try to break it.
@@ -149,9 +170,15 @@ Its instructions:
 > Then score every surviving candidate yourself, on the scorecard, using one consistent counting method across all of them.
 > State your method for "special case" in one sentence before you start, and apply it identically to each.
 > Rank them, special cases first, and state the reader verdict for each: thanks, or wow.
+> A candidate that wins the count but reads as *wow* does not win; rank it below the best *thanks* and say what the trade was.
 > Then list **transplants**: specific moves from losing candidates that would fit the winner.
 > Be precise about what and where.
-> Return: kills, your counting method, the scored ranking, the winner, the transplant list.
+> A move whose justification is speed, a bug fix or a feature is out of scope, even when it is small; name it separately so the main session can decline it.
+> Return: kills, your counting method, the scored ranking, the winner, the transplant list, and every input you traced, as runnable snippets.
+
+The adversary's "same output" is a hand trace until the main session runs it.
+Run every input it returns on every surviving candidate and compare bytes; a difference the trace missed is a kill.
+The inputs join the gate: after round 1 they are a frozen probe set, run beside the tests on every later candidate and transplant.
 
 If the unit is large, also ask: which region of this code is still the weakest?
 Later rounds narrow onto that answer instead of re-processing the whole file.
@@ -175,7 +202,7 @@ Say why you stopped.
 - No challenger beat the champion → stop.
   Three more agents will not find what these three missed.
 - The round's only gains were cosmetic — renames, line count, formatting → stop.
-- A candidate wins on numbers but loses the reader verdict → keep the champion, and tell the user what the trade was so they can overrule you.
+- The adversary ranked the count-winner below a *thanks* candidate, and nothing else beat the champion → keep the champion, and tell the user what the trade was so they can overrule you.
 - Round 3 is for the case where a round-2 reframe opened new ground.
   If round 2 was already flat, do not run round 3.
 
@@ -189,7 +216,9 @@ The largest simplification usually lives in the specification rather than the co
 
 ## Close the loop
 
-When the rounds end, write a short log next to the code — `POLISH.md`, a commit message, whatever fits the project.
+When the rounds end, write a short log.
+Its home is the commit body of the polish commit.
+A file next to the code — `POLISH.md` — is for an internal repo only; in a published repo it rides into the next PR.
 Keep it under a page:
 
 - what changed, with the before/after numbers

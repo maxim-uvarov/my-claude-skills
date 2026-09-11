@@ -187,13 +187,17 @@ Nothing is changed until the user confirms.
      Build exactly that many commits — never split further just because a correction happened along the way, never merge two subjects into one just because they happen to share a file (`references/grouped.md` decides that case).
      Say so plainly whenever the count comes out above one, whether or not `--grouped` was passed — the shape is the branch's own; `--grouped` only lets the user skip straight to it.
 
-   Show the user, in one block: the chapters found and which original commits fold into each, the generated message(s), the `todo/`/`gi/` paths being dropped, each hash from step 7a with the file citing it and whether it is dropped or repointed (step 11a), an `archive/<branch>` overwrite warning if `git tag -l` finds one, the rebase warning from step 5, the content fork-point from step 5a with its evidence if one was found, any branch step 13b will offer to re-base, the exact merge command, and the branch-delete command from step 13a.
+   Show the user, in one block: the chapters found and which original commits fold into each, the generated message(s), the `todo/`/`gi/` paths being dropped, each hash from step 7a with the file citing it and whether it is dropped or repointed (step 11a), an overwrite warning if `git tag -l` already finds the tag step 9 will write, the rebase warning from step 5, the content fork-point from step 5a with its evidence if one was found, any branch step 13b will offer to re-base, the exact merge command, and the branch-delete command from step 13a.
    **Wait for confirmation.**
 
 ## Landing
 
 9. **Archive first** — only on the squash path.
    `git tag -f archive/<branch> HEAD`.
+   In a monorepo — the root `CLAUDE.md` says so, and step 7 has already read it — the tag is `archive/<repo>/<branch>` instead, where `<repo>` is the subdirectory the branch's diff lives in: `git diff --name-only <base>..HEAD | cut -d/ -f1 | sort -u`.
+   A branch whose diff spans several subdirectories keeps the plain `archive/<branch>`.
+   Why the prefix: a monorepo's tag namespace is flat and shared by every repo it holds, so an unprefixed name collides the first time two of them archive the same branch name — its tooling spec says so, and writes the archives it imports under the same `archive/<repo>/` prefix.
+   Every later `archive/<branch>` in this skill, the `-prerebase` tags of step 13b included, means the name chosen here.
    This runs before anything destructive, and it is what makes the rest reversible — every original commit, including the `todo/` ones, stays reachable.
    Skip it entirely when step 8 sent you to the merge: there is nothing to make reachable.
 

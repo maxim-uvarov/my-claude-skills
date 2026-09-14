@@ -1,7 +1,7 @@
 ---
 name: 40-land-branch
 description: Land a finished branch on the trunk as a coherent commit — fold the rollback commits into the work they correct, carry the branch's reasoning into the message, archive the old history in a tag, keep `todo/` and `gi/` off the trunk, then merge. Use when the user says "land the branch", "land this", "merge to main", "finish this branch", or "squash and merge".
-argument-hint: [--grouped] [trunk branch, if not main/master]
+argument-hint: [--grouped]
 allowed-tools: Bash(git *), Read, Write, Edit
 ---
 
@@ -32,26 +32,26 @@ Two things stay off-limits even here: **never push**, and never run this on the 
 
 ## Repo snapshot
 
-The block below runs once, before any of this reaches Claude — steps 1, 3, and 4 start with the answer already in hand instead of each costing its own tool call and turn.
-It assumes the default trunk (`main`, falling back to `master`); it does not read `$ARGUMENTS`, so a trunk name given there is not covered.
-When step 3 lands on a trunk the snapshot did not use, re-run these same queries against it; steps 4 and 5 then read your numbers in place of the snapshot's.
+The block below runs once, before any of this reaches Claude — steps 1, 3, 4 and 5 start with the answer already in hand instead of each costing its own tool call and turn.
+It looks for a local `main` and a local `master` and reports what it found: one name, both, or none.
 
 ```!
 branch=$(git branch --show-current)
 echo "current-branch: ${branch:-<detached HEAD>}"
-if git rev-parse --verify -q main >/dev/null 2>&1; then trunk=main
-elif git rev-parse --verify -q master >/dev/null 2>&1; then trunk=master
-else trunk=""
-fi
-echo "default-trunk: ${trunk:-<none found>}"
-if [ -n "$trunk" ]; then
+candidates=""
+for t in main master; do
+  git show-ref --verify --quiet "refs/heads/$t" && candidates="$candidates $t"
+done
+candidates=${candidates# }
+echo "trunk-candidates: ${candidates:-<none>}"
+for trunk in $candidates; do
   base=$(git merge-base "$trunk" HEAD 2>/dev/null)
-  echo "merge-base: $base"
-  echo "trunk-head: $(git rev-parse "$trunk")"
-  echo "trunk-moved: $([ "$(git rev-parse "$trunk")" = "$base" ] && echo no || echo yes)"
-  echo "commits base..HEAD:"
+  echo "[$trunk] merge-base: $base"
+  echo "[$trunk] trunk-head: $(git rev-parse "$trunk")"
+  echo "[$trunk] trunk-moved: $([ "$(git rev-parse "$trunk")" = "$base" ] && echo no || echo yes)"
+  echo "[$trunk] commits base..HEAD:"
   git log --oneline "$base"..HEAD 2>/dev/null
-fi
+done
 ```
 
 ## Procedure
@@ -70,15 +70,20 @@ Nothing is changed until the user confirms.
    A soft reset would otherwise sweep unrelated edits into the landing commit.
 
 3. **Find the trunk.**
-   Strip `--grouped` out of `$ARGUMENTS` first — it's the multi-commit shortcut, not a branch name.
-   What remains is the trunk name if given (verify it yourself with `git rev-parse --verify <name>` — the snapshot only covers the default case), else the snapshot's `default-trunk`.
+   `trunk-candidates` from the snapshot names it.
+   One name: that is the trunk, and every `<trunk>` below means it.
+   Two names or `<none>`: stop and ask the user which branch is the trunk — a repo can carry a stale `master` beside `main`, and only the user knows which one is live.
+   If the branch the user names is `current-branch`, stop as step 1 would have.
+   If it is one the snapshot did not print, run the block's per-candidate lines against it, so steps 4 and 5 have their numbers.
+   Do not probe for the trunk yourself with `git rev-parse` or `git branch`, and never assume `main`: the snapshot already looked, and in past sessions agents ran `git merge-base main HEAD` in `master` repos and failed.
 
 4. **Find the base.**
-   The snapshot's `merge-base` and `commits base..HEAD` answer this.
+   The snapshot's `[<trunk>] merge-base` and `[<trunk>] commits base..HEAD` answer this.
+   Read the lines of the trunk step 3 settled.
    An empty commit list means "nothing to land" — report that and exit.
 
 5. **Has the trunk moved?**
-   The snapshot's `trunk-moved` answers this.
+   The snapshot's `[<trunk>] trunk-moved` answers this.
    If it moved, `--ff-only` will fail.
    The plan then gains a `git rebase <trunk>` between the squash and the merge — one commit to replay, but say plainly that a conflict there needs the user's hands.
    Never substitute a merge commit for the rebase without saying so.

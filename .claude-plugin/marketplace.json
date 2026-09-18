@@ -19,13 +19,6 @@
       "version": "0.1.0",
       "source": "./plugins/upstream",
       "category": "productivity"
-    },
-    {
-      "name": "canvas-output-style",
-      "description": "Output style only: a version-controlled .md file is the interface; chat carries only pointers",
-      "version": "0.1.0",
-      "source": "./plugins/canvas-output-style",
-      "category": "productivity"
     }
   ]
 }
